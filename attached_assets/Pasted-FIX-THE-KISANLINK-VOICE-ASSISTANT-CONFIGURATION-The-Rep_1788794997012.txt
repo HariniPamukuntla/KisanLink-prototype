@@ -1,0 +1,74 @@
+FIX THE KISANLINK VOICE ASSISTANT CONFIGURATION.
+
+The Replit Secret GROQ_API_KEY has already been added, but the application still displays:
+
+"Voice service is not configured. Please check the AI/STT API configuration."
+
+Do NOT redesign or change any existing KisanLink UI.
+
+First inspect the actual current implementation and determine:
+
+1. Which environment variable the speech/STT service is checking.
+2. Which environment variable the AI/LLM service is checking.
+3. Whether GROQ_API_KEY is being accessed correctly.
+4. Whether the application is trying to access the secret from client-side React code.
+5. Whether a backend/server route exists for AI and speech requests.
+
+Then FIX the architecture rather than simply changing the error message.
+
+REQUIREMENTS:
+
+- Use the existing Replit Secret named exactly:
+  GROQ_API_KEY
+
+- The private Groq API key must remain server-side.
+- NEVER expose GROQ_API_KEY through VITE_ variables.
+- NEVER put the API key in React components.
+- NEVER hardcode the API key.
+
+Create or repair a secure server-side API route/service that can receive the recorded audio from the frontend and use GROQ_API_KEY to call a real speech-to-text service.
+
+Use Groq Whisper-compatible speech-to-text for the microphone audio.
+
+Then send the resulting transcription to a real Groq LLM model for conversational AI.
+
+The frontend flow must be:
+
+Microphone
+→ record audio
+→ secure server endpoint
+→ Groq speech-to-text
+→ transcription
+→ Groq LLM
+→ AI response
+→ display response
+→ text-to-speech
+
+Typed messages should also use the same real Groq LLM service.
+
+DO NOT use hardcoded responses.
+
+DO NOT use fake AI responses.
+
+DO NOT use a fixed list of questions.
+
+The assistant must support natural multilingual input, including Hindi, Marathi, English, Telugu and mixed-language speech where the speech-to-text model supports it.
+
+IMPORTANT:
+Do not merely make the configuration message disappear.
+
+Actually test whether the server can read GROQ_API_KEY.
+
+Add useful server-side error logging for configuration/API failures, but NEVER print the actual API key.
+
+If GROQ_API_KEY is missing, return a clear configuration error.
+
+If GROQ_API_KEY exists, use it.
+
+Inspect package.json and the existing project architecture before making changes.
+
+Reuse the existing KisanLink AI assistant UI.
+
+DO NOT redesign the dashboard, sidebar, cards, colors, navigation, login page, or any other existing UI.
+
+After fixing the implementation, restart the application and test the voice flow end-to-end.

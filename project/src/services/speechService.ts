@@ -18,8 +18,14 @@ export class SpeechServiceError extends Error {
   }
 }
 
+const DEFAULT_STT_ENDPOINT = '/api/voice/transcribe';
+
+function getSTTEndpoint() {
+  return import.meta.env.VITE_STT_API_URL?.trim() || DEFAULT_STT_ENDPOINT;
+}
+
 export function isSpeechServiceConfigured() {
-  return Boolean(import.meta.env.VITE_STT_API_URL?.trim());
+  return true;
 }
 
 function getMimeType() {
@@ -28,13 +34,7 @@ function getMimeType() {
 }
 
 export async function transcribeAudio(audio: Blob, languageHint: 'auto' | LanguageCode = 'auto'): Promise<SpeechTranscription> {
-  const endpoint = import.meta.env.VITE_STT_API_URL?.trim();
-  if (!endpoint) {
-    throw new SpeechServiceError(
-      'Voice service is not configured. Please check the AI/STT API configuration.',
-      'not-configured'
-    );
-  }
+  const endpoint = getSTTEndpoint();
 
   const form = new FormData();
   form.append('audio', audio, 'kisanvoice.webm');
@@ -51,6 +51,13 @@ export async function transcribeAudio(audio: Blob, languageHint: 'auto' | Langua
   }
 
   if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null) as { error?: unknown } | null;
+    if (response.status === 503 || typeof errorPayload?.error === 'string' && errorPayload.error.toLowerCase().includes('not configured')) {
+      throw new SpeechServiceError(
+        'Voice service is not configured. Please check the AI/STT API configuration.',
+        'not-configured'
+      );
+    }
     throw new SpeechServiceError(
       'I couldn’t understand the audio. Please try again.',
       'transcription-failed'
@@ -81,12 +88,6 @@ export class SpeechRecorder {
   private stopPromise: Promise<SpeechTranscription> | null = null;
 
   async start() {
-    if (!isSpeechServiceConfigured()) {
-      throw new SpeechServiceError(
-        'Voice service is not configured. Please check the AI/STT API configuration.',
-        'not-configured'
-      );
-    }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       throw new SpeechServiceError(
         'Voice service is not configured. Please check the AI/STT API configuration.',

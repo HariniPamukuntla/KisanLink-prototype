@@ -18,17 +18,10 @@ export class AIServiceError extends Error {
   }
 }
 
+const DEFAULT_AI_ENDPOINT = '/api/voice/chat';
+
 function getAIEndpoint() {
-  const endpoint = import.meta.env.VITE_AI_API_URL?.trim();
-
-  if (!endpoint) {
-    throw new AIServiceError(
-      'AI assistant is currently unavailable. Please check the AI configuration.',
-      'not-configured'
-    );
-  }
-
-  return endpoint;
+  return import.meta.env.VITE_AI_API_URL?.trim() || DEFAULT_AI_ENDPOINT;
 }
 
 export async function askAgriculturalAI(
@@ -58,6 +51,13 @@ export async function askAgriculturalAI(
   }
 
   if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null) as { error?: unknown } | null;
+    if (response.status === 503 || typeof errorPayload?.error === 'string' && errorPayload.error.toLowerCase().includes('not configured')) {
+      throw new AIServiceError(
+        'AI assistant is currently unavailable. Please check the AI configuration.',
+        'not-configured'
+      );
+    }
     throw new AIServiceError(
       'AI assistant is currently unavailable. Please check the AI configuration.',
       'request-failed'
