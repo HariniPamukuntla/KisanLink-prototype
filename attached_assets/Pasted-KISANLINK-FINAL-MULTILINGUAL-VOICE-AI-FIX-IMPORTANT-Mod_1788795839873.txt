@@ -1,0 +1,633 @@
+KISANLINK — FINAL MULTILINGUAL VOICE AI FIX
+
+IMPORTANT:
+Modify ONLY the existing KisanLink AI Assistant functionality.
+DO NOT redesign the KisanLink UI.
+DO NOT change the dashboard, sidebar, cards, colors, navigation, login page, market UI, or existing layout.
+
+The current voice assistant works reasonably in English but FAILS for Indian languages and does not speak multilingual responses aloud.
+
+I need you to completely FIX the existing voice pipeline so it behaves like a real multilingual AI voice assistant.
+
+DO NOT create fake responses.
+DO NOT use hardcoded language-specific answers.
+DO NOT use browser SpeechRecognition as the primary STT system.
+DO NOT use Groq TTS for Indian-language speech output because it does not provide the required Indian-language voices.
+
+====================================================
+TARGET ARCHITECTURE
+====================================================
+
+VOICE INPUT
+↓
+REAL MULTILINGUAL SPEECH-TO-TEXT
+↓
+AUTOMATIC LANGUAGE DETECTION
+↓
+REAL LLM CONVERSATION
+↓
+RESPONSE IN THE USER'S LANGUAGE
+↓
+MULTILINGUAL TEXT-TO-SPEECH
+↓
+AUDIO PLAYBACK
+
+TEXT INPUT
+↓
+LANGUAGE DETECTION
+↓
+REAL LLM
+↓
+RESPONSE IN USER'S LANGUAGE
+↓
+OPTION TO PLAY RESPONSE USING MULTILINGUAL TTS
+
+====================================================
+1. MULTILINGUAL SPEECH-TO-TEXT
+====================================================
+
+Use Groq Whisper:
+
+model:
+whisper-large-v3
+
+NOT an English-only Whisper model.
+
+Do not force:
+
+language = "en"
+
+for every request.
+
+The system must support automatic language detection.
+
+If the frontend knows the user's selected language, pass the corresponding ISO-639-1 language code to STT where appropriate:
+
+English = en
+Hindi = hi
+Marathi = mr
+Telugu = te
+Tamil = ta
+Kannada = kn
+Bengali = bn
+Gujarati = gu
+Punjabi = pa
+Urdu = ur
+Malayalam = ml
+
+But do NOT require the farmer to manually select a language before every voice message.
+
+For voice input, allow automatic multilingual transcription.
+
+The system must correctly handle:
+
+English
+Hindi
+Marathi
+Telugu
+Tamil
+Kannada
+Bengali
+Gujarati
+Punjabi
+Urdu
+Malayalam
+Hinglish
+Marathi + Hindi mixed speech
+Telugu + English mixed speech
+Hindi + English mixed speech
+informal farmer speech
+accented speech
+imperfect grammar
+
+Examples:
+
+"आज टमाटर का भाव क्या है?"
+
+"आज टोमॅटोचा भाव किती आहे?"
+
+"ఈరోజు టమాటా ధర ఎంత ఉంది?"
+
+"tomato rate entha undi?"
+
+"bhai onion ka market rate bata"
+
+These must be treated as natural speech, not unknown commands.
+
+Use the actual transcribed text returned by Whisper.
+
+Display the transcription in the existing chat UI so the farmer can see what was understood.
+
+====================================================
+2. IMPORTANT: IMPROVE TRANSCRIPTION ACCURACY
+====================================================
+
+Use:
+
+whisper-large-v3
+
+with temperature 0.
+
+Provide a useful agricultural prompt/context to Whisper containing terms such as:
+
+farmer
+crop
+tomato
+onion
+potato
+wheat
+rice
+market
+mandi
+APMC
+price
+quality
+harvest
+storage
+buyer
+seller
+fertilizer
+irrigation
+Maharashtra
+Nashik
+Pune
+Nagpur
+Telangana
+government schemes
+
+This is only a transcription vocabulary/context prompt.
+It must NOT generate answers.
+
+Do not translate the farmer's speech to English before sending it to the LLM.
+
+Preserve the original language.
+
+====================================================
+3. AUTOMATIC LANGUAGE DETECTION
+====================================================
+
+After transcription, determine the language of the actual user message.
+
+Do NOT simply use the UI language.
+
+For example:
+
+UI language = English
+User speaks Telugu
+→ detect Telugu
+→ answer in Telugu
+→ speak in Telugu
+
+UI language = Marathi
+User speaks Hindi
+→ detect Hindi
+→ answer in Hindi
+→ speak in Hindi
+
+Mixed language:
+"Anna tomato ka rate entha undi?"
+→ understand the intent naturally
+→ answer naturally using the user's mixed-language style where appropriate.
+
+Create a reliable language detection utility/service.
+
+For example:
+
+src/services/languageService.ts
+
+Return a normalized language code:
+
+en
+hi
+mr
+te
+ta
+kn
+bn
+gu
+pa
+ur
+ml
+etc.
+
+====================================================
+4. REAL LLM
+====================================================
+
+Continue using the existing real Groq LLM integration.
+
+The LLM must receive:
+
+- system prompt
+- conversation history
+- detected language
+- current user message
+
+The system prompt must explicitly say:
+
+"You are KisanLink's multilingual agricultural AI assistant.
+
+Understand the user's intent regardless of language, dialect, informal grammar, transliteration, or mixed-language speech.
+
+Respond naturally in the language used by the user.
+
+Do not unnecessarily translate the user's message into English.
+
+If the user speaks Hindi, answer Hindi.
+If Marathi, answer Marathi.
+If Telugu, answer Telugu.
+If English, answer English.
+If mixed language, respond naturally in a matching mixed-language style when appropriate.
+
+Never invent live market prices, government scheme details, weather data, or other real-time facts when the required live data source is unavailable."
+
+Maintain session conversation history.
+
+Example:
+
+User:
+"నా పేరు రవి."
+
+Assistant:
+"అవును రవి, చెప్పండి."
+
+User:
+"నేను టమాటాలు పండిస్తున్నాను."
+
+Assistant:
+"సరే, మీరు టమాటాలు పండిస్తున్నారు."
+
+User:
+"వాటిని ఎప్పుడు అమ్మాలి?"
+
+The assistant must understand that "వాటిని" refers to tomatoes.
+
+====================================================
+5. MULTILINGUAL TEXT-TO-SPEECH
+====================================================
+
+THIS IS CRITICAL.
+
+Do NOT use Groq's English-only TTS for Telugu, Marathi, Hindi, Tamil, Kannada, etc.
+
+Implement a proper multilingual TTS service.
+
+Create:
+
+src/services/ttsService.ts
+
+Use Gemini's multilingual TTS API for speech generation if the required Gemini API key is available.
+
+Gemini TTS must be configured to support at least:
+
+English
+Hindi
+Marathi
+Telugu
+Tamil
+Kannada
+Gujarati
+Punjabi
+Urdu
+Bengali
+Malayalam
+
+Map language codes correctly.
+
+Examples:
+
+en → English voice
+hi → Hindi voice
+mr → Marathi voice
+te → Telugu voice
+ta → Tamil voice
+kn → Kannada voice
+gu → Gujarati voice
+pa → Punjabi voice
+ur → Urdu voice
+bn → Bengali voice
+ml → Malayalam voice
+
+The TTS request must receive the ORIGINAL AI response text in that language.
+
+DO NOT translate Telugu → English → TTS.
+
+DO NOT translate Marathi → English → TTS.
+
+DO NOT translate Hindi → English → TTS.
+
+The audio must be generated directly from the response language.
+
+====================================================
+6. API CONFIGURATION
+====================================================
+
+Use secure Replit Secrets.
+
+Existing:
+
+GROQ_API_KEY
+
+Add/support:
+
+GEMINI_API_KEY
+
+NEVER expose either secret in React frontend code.
+
+NEVER use VITE_GROQ_API_KEY.
+NEVER use VITE_GEMINI_API_KEY for private server-side secrets.
+
+All API calls involving private keys must go through secure server-side routes.
+
+If GEMINI_API_KEY is missing:
+
+The assistant should still display the text response.
+
+Show a small non-blocking message such as:
+
+"Voice playback is unavailable because multilingual TTS is not configured."
+
+Do NOT claim that speech was generated when it was not.
+
+====================================================
+7. TEXT MESSAGE → SPEECH
+====================================================
+
+When a farmer types:
+
+"నాకు టమాటా పంట గురించి చెప్పండి"
+
+the AI should respond in Telugu.
+
+There must be a visible speaker/play button on the AI response.
+
+Clicking it must call multilingual TTS and actually play Telugu audio.
+
+Likewise:
+
+Hindi text → Hindi audio
+Marathi text → Marathi audio
+English text → English audio
+
+This is currently broken and MUST be fixed.
+
+====================================================
+8. VOICE MESSAGE → AI → VOICE
+====================================================
+
+The microphone workflow must be:
+
+1. User presses microphone.
+2. Request microphone permission.
+3. Record actual audio.
+4. Stop recording.
+5. Send audio to server.
+6. Server sends audio to Groq Whisper Large V3.
+7. Receive actual transcription.
+8. Detect language.
+9. Send transcription + conversation history to Groq LLM.
+10. Receive response in same language.
+11. Display response.
+12. Send response to multilingual TTS.
+13. Receive audio.
+14. Automatically play audio.
+15. Return to idle state.
+
+Show these existing UI states:
+
+Listening...
+Transcribing...
+Thinking...
+Speaking...
+
+Do not redesign the component.
+
+====================================================
+9. AUDIO FORMAT
+====================================================
+
+Make sure browser MediaRecorder produces a format supported by the STT endpoint.
+
+Supported formats include:
+
+webm
+wav
+mp3
+m4a
+ogg
+
+Handle the actual MIME type returned by MediaRecorder rather than assuming one format.
+
+Do not send an invalid or empty audio blob.
+
+Check:
+
+audioBlob.size > 0
+
+before sending.
+
+Handle microphone permission errors.
+
+====================================================
+10. DO NOT USE BROWSER LANGUAGE AS THE STT LANGUAGE
+====================================================
+
+Do NOT do this:
+
+recognition.lang = "en-US"
+
+and expect multilingual support.
+
+Do NOT depend on browser SpeechRecognition for the main transcription.
+
+The actual recorded audio must go to the server-side Whisper API.
+
+====================================================
+11. TTS AUDIO PLAYBACK
+====================================================
+
+After TTS returns audio:
+
+- create a Blob
+- create an object URL
+- create an Audio object
+- play it
+- handle autoplay restrictions gracefully
+- clean up object URLs after playback
+
+If autoplay is blocked by the browser, show:
+
+"Tap the speaker button to hear the response."
+
+The speaker button must always remain available.
+
+Do not silently fail.
+
+====================================================
+12. TTS RESPONSE LENGTH
+====================================================
+
+If the TTS provider has a character limit, intelligently split long AI responses into safe chunks.
+
+Do NOT truncate the farmer's answer.
+
+Generate and play chunks sequentially.
+
+Keep the displayed response as one complete message.
+
+====================================================
+13. LANGUAGE FALLBACK
+====================================================
+
+If automatic language detection is uncertain:
+
+Use the user's selected KisanLink language as a fallback.
+
+If that is unavailable:
+
+Use English as the final fallback.
+
+Never refuse a valid Indian-language question simply because language detection is uncertain.
+
+====================================================
+14. ERROR HANDLING
+====================================================
+
+Show useful errors.
+
+STT failure:
+"I couldn't understand the audio. Please try again."
+
+LLM failure:
+"AI assistant is temporarily unavailable. Please try again."
+
+TTS failure:
+"I generated the answer, but couldn't play the voice response."
+
+Microphone denied:
+"Microphone permission is required for voice questions."
+
+Missing Groq key:
+"AI voice service is not configured."
+
+Missing Gemini key:
+"Multilingual voice playback is not configured."
+
+Never return fake answers.
+
+====================================================
+15. SERVICE ARCHITECTURE
+====================================================
+
+Keep these services separate:
+
+src/services/aiService.ts
+src/services/speechService.ts
+src/services/ttsService.ts
+src/services/languageService.ts
+
+If the project uses another existing architecture, adapt to it rather than unnecessarily creating duplicate services.
+
+The provider should be replaceable later.
+
+====================================================
+16. SECURITY
+====================================================
+
+Private API keys must ONLY exist in Replit Secrets/server environment.
+
+Never:
+
+- hardcode keys
+- commit keys
+- put keys in GitHub
+- expose keys through frontend JavaScript
+- use console.log to print keys
+
+====================================================
+17. TEST THE ACTUAL PROBLEM
+====================================================
+
+Before declaring the feature complete, test all of these:
+
+VOICE INPUT:
+
+1. English:
+"What is the best time to sell tomatoes?"
+
+2. Hindi:
+"आज टमाटर का भाव क्या है?"
+
+3. Marathi:
+"आज कांद्याचा बाजार भाव किती आहे?"
+
+4. Telugu:
+"ఈరోజు టమాటా ధర ఎంత ఉంది?"
+
+5. Hinglish:
+"bhai onion ka rate aaj kya hai?"
+
+6. Mixed Telugu-English:
+"anna tomato price entha undi?"
+
+7. Follow-up:
+"How should I store them?"
+after discussing tomatoes.
+
+TEXT → SPEECH:
+
+8. Type a Telugu question and click speaker.
+It MUST speak Telugu.
+
+9. Type a Marathi question and click speaker.
+It MUST speak Marathi.
+
+10. Type a Hindi question and click speaker.
+It MUST speak Hindi.
+
+11. Type an English question.
+It MUST speak English.
+
+Do not mark the task complete until these flows are actually implemented.
+
+====================================================
+18. MOST IMPORTANT REQUIREMENT
+====================================================
+
+I do NOT want:
+
+English-only voice recognition.
+
+I do NOT want:
+
+Telugu text response with no audio.
+
+I do NOT want:
+
+Marathi text response with no audio.
+
+I do NOT want:
+
+hardcoded language responses.
+
+I do NOT want:
+
+browser SpeechRecognition pretending to be multilingual AI.
+
+I want:
+
+REAL MULTILINGUAL SPEECH-TO-TEXT
++
+REAL MULTILINGUAL AI REASONING
++
+REAL MULTILINGUAL TEXT-TO-SPEECH
++
+NATURAL CONVERSATION
++
+SESSION MEMORY.
+
+Preserve the existing KisanLink UI exactly.
+
+FIRST inspect the existing implementation.
+THEN modify only what is necessary.
+THEN test the complete pipeline.

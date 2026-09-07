@@ -14,18 +14,18 @@ The configured Replit workflow runs the same command and serves the preview on p
 
 ## AI assistant configuration
 
-KisanVoice uses the server-side Groq API route in `project/server/groqApi.ts`. Keep the Replit Secret named exactly `GROQ_API_KEY`; it is read only by the Vite server middleware and is never exposed through `VITE_*` variables or React code.
+KisanVoice uses the server-side Groq and Gemini API routes in `project/server/groqApi.ts`. Keep the Replit Secrets named exactly `GROQ_API_KEY` and `GEMINI_API_KEY`; they are read only by the Vite server middleware and are never exposed through `VITE_*` variables or React code.
 
 The voice flow is:
 
 ```text
 microphone → /api/voice/transcribe → Groq Whisper → transcription
-→ /api/voice/chat → Groq LLM → response → multilingual browser TTS
+→ /api/voice/chat → Groq LLM → response → /api/voice/speak → Gemini multilingual TTS
 ```
 
-The frontend defaults to `/api/voice/transcribe` and `/api/voice/chat`. `VITE_STT_API_URL` and `VITE_AI_API_URL` may still override those routes for a separately managed provider, while `VITE_TTS_API_URL` is optional. Without a TTS provider, `ttsService.ts` uses browser speech synthesis.
+The frontend defaults to `/api/voice/transcribe`, `/api/voice/chat`, and `/api/voice/speak`. `VITE_STT_API_URL`, `VITE_AI_API_URL`, and `VITE_TTS_API_URL` may override those routes for separately managed providers. Gemini receives the original response text in its detected language; the browser is not used as the primary multilingual TTS provider.
 
-The server returns a clear configuration error when `GROQ_API_KEY` is missing and logs provider/configuration failures without logging the secret.
+The server returns clear configuration errors when either secret is missing and logs provider/configuration failures without logging secrets.
 
 ## Authentication and crop quality
 

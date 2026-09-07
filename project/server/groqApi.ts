@@ -3,12 +3,33 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Buffer } from 'node:buffer';
 
 const GROQ_API_BASE = 'https://api.groq.com/openai/v1';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b';
+const DEFAULT_GEMINI_TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 const MAX_JSON_BYTES = 1 * 1024 * 1024;
 
 const SYSTEM_PROMPT =
-  'You are KisanLink Agricultural AI Assistant. Help Indian farmers with agricultural questions, crops, markets, storage, buyers, government schemes, crop quality, and general farming. Understand informal and mixed-language speech. Reply in the farmer’s language or natural mixed style whenever possible. Never invent today’s prices, scheme eligibility, or live facts. If no real-time data source is connected, say that live market data is not currently connected instead of guessing.';
+  'You are KisanLink’s multilingual agricultural AI assistant. Understand the user’s intent regardless of language, dialect, informal grammar, transliteration, or mixed-language speech. Respond naturally in the language used by the user. Do not unnecessarily translate the user’s message into English. If the user speaks Hindi, answer Hindi. If Marathi, answer Marathi. If Telugu, answer Telugu. If English, answer English. If mixed language, respond naturally in a matching mixed-language style when appropriate. Help Indian farmers with agricultural questions, crops, markets, storage, buyers, government schemes, crop quality, and general farming. Never invent live market prices, government scheme details, weather data, or other real-time facts when the required live data source is unavailable.';
+
+const WHISPER_PROMPT =
+  'KisanLink agricultural farmer speech. Vocabulary includes farmer, crop, tomato, onion, potato, wheat, rice, market, mandi, APMC, price, quality, harvest, storage, buyer, seller, fertilizer, irrigation, Maharashtra, Nashik, Pune, Nagpur, Telangana, and government schemes. Preserve the original language, transliteration, and mixed-language speech.';
+
+const GEMINI_VOICE_MAP: Record<string, string> = {
+  en: 'Kore',
+  hi: 'Aoede',
+  mr: 'Aoede',
+  te: 'Aoede',
+  ta: 'Aoede',
+  kn: 'Aoede',
+  bn: 'Aoede',
+  gu: 'Aoede',
+  pa: 'Aoede',
+  ur: 'Aoede',
+  ml: 'Aoede',
+  as: 'Aoede',
+  or: 'Aoede',
+};
 
 type MultipartFile = {
   filename: string;
@@ -23,6 +44,10 @@ type VoiceMessage = {
 
 function getGroqKey() {
   return process.env.GROQ_API_KEY?.trim() || '';
+}
+
+function getGeminiKey() {
+  return process.env.GEMINI_API_KEY?.trim() || '';
 }
 
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
@@ -170,8 +195,10 @@ async function transcribe(req: IncomingMessage, res: ServerResponse) {
 
   const form = new FormData();
   form.append('file', new Blob([parsed.audio.data], { type: parsed.audio.contentType }), parsed.audio.filename);
-  form.append('model', 'whisper-large-v3-turbo');
+  form.append('model', 'whisper-large-v3');
   form.append('response_format', 'verbose_json');
+  form.append('temperature', '0');
+  form.append('prompt', WHISPER_PROMPT);
 
   const language = parsed.fields.language?.trim();
   if (language && language !== 'auto') form.append('language', language);
@@ -208,6 +235,110 @@ async function transcribe(req: IncomingMessage, res: ServerResponse) {
     text: payload.text.trim(),
     language: normalizeLanguage(payload.language),
   });
+}
+
+function pcmToWav(pcm: Buffer, sampleRate: number, channels = 1, bitsPerSample = 16) {
+  const blockAlign = channels * (bitsPerSample / 8);
+  const byteRate = sampleRate * blockAlign;
+  const wav = Buffer.alloc(44 + pcm.length);
+  wav.write('RIFF', 0);
+  wav.writeUInt32LE(36 + pcm.length, 4);
+  wav.write('WAVE', 8);
+  wav.write('fmt ', 12);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(channels, 22);
+  wav.writeUInt32LE(sampleRate, 24);
+  wav.writeUInt32LE(byteRate, 28);
+  wav.writeUInt16LE(blockAlign, 32);
+  wav.writeUInt16LE(bitsPerSample, 34);
+  wav.write('data', 36);
+  wav.writeUInt32LE(pcm.length, 40);
+  pcm.copy(wav, 44);
+  return wav;
+}
+
+async function speak(req: IncomingMessage, res: ServerResponse) {
+  const apiKey = getGeminiKey();
+  if (!apiKey) {
+    console.error('[gemini] TTS unavailable: GEMINI_API_KEY is missing');
+    sendJson(res, 503, { error: 'Multilingual voice playback is not configured.' });
+    return;
+  }
+
+  let body: { text?: unknown; language?: unknown };
+  try {
+    body = JSON.parse((await readRequestBody(req, MAX_JSON_BYTES)).toString('utf8')) as typeof body;
+  } catch {
+    sendJson(res, 400, { error: 'The voice playback request body is invalid.' });
+    return;
+  }
+
+  const text = typeof body.text === 'string' ? body.text.trim() : '';
+  const language = typeof body.language === 'string' ? body.language.toLowerCase().split('-')[0] : 'en';
+  if (!text) {
+    sendJson(res, 400, { error: 'Text is required for voice playback.' });
+    return;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${GEMINI_API_BASE}/models/${process.env.GEMINI_TTS_MODEL?.trim() || DEFAULT_GEMINI_TTS_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: GEMINI_VOICE_MAP[language] || GEMINI_VOICE_MAP.en,
+                },
+              },
+            },
+          },
+        }),
+      }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Network error';
+    logProviderError('TTS network request', 502, message);
+    sendJson(res, 502, { error: 'Multilingual voice playback is temporarily unavailable.' });
+    return;
+  }
+
+  if (!response.ok) {
+    const message = await readProviderError(response);
+    logProviderError('TTS provider request', response.status, message);
+    sendJson(res, 502, { error: 'Multilingual voice playback is temporarily unavailable.' });
+    return;
+  }
+
+  const payload = await response.json() as {
+    candidates?: Array<{
+      content?: {
+        parts?: Array<{ inlineData?: { data?: unknown; mimeType?: unknown } }>;
+      };
+    }>;
+  };
+  const inlineData = payload.candidates?.[0]?.content?.parts?.find(part => part.inlineData)?.inlineData;
+  if (typeof inlineData?.data !== 'string') {
+    console.error('[gemini] TTS returned no audio data');
+    sendJson(res, 502, { error: 'Multilingual voice playback returned no audio.' });
+    return;
+  }
+
+  const mimeType = typeof inlineData.mimeType === 'string' ? inlineData.mimeType : 'audio/L16;codec=pcm;rate=24000';
+  const audio = Buffer.from(inlineData.data, 'base64');
+  const pcmRate = Number(mimeType.match(/rate=(\d+)/i)?.[1] || 24000);
+  const output = mimeType.toLowerCase().includes('pcm') ? pcmToWav(audio, pcmRate) : audio;
+  res.statusCode = 200;
+  res.setHeader('Content-Type', mimeType.toLowerCase().includes('pcm') ? 'audio/wav' : mimeType);
+  res.setHeader('Content-Length', output.length);
+  res.end(output);
 }
 
 async function chat(req: IncomingMessage, res: ServerResponse) {
@@ -302,6 +433,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, next: ()
 
   if (path === '/api/voice/chat' && req.method === 'POST') {
     await chat(req, res);
+    return;
+  }
+
+  if (path === '/api/voice/speak' && req.method === 'POST') {
+    await speak(req, res);
     return;
   }
 

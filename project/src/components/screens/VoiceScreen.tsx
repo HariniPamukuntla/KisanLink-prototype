@@ -10,7 +10,7 @@ import { VOICE_SUGGESTIONS } from '../../data/voiceScripts';
 import { askAgriculturalAI, exchangesToMessages, AIServiceError } from '../../services/aiService';
 import { detectLanguageFromText } from '../../services/languageService';
 import { SpeechRecorder, SpeechServiceError } from '../../services/speechService';
-import { speakText, stopSpeech } from '../../services/ttsService';
+import { speakText, stopSpeech, TTSServiceError } from '../../services/ttsService';
 import type { LanguageCode, ConnectivityMode, VoiceExchange } from '../../types';
 
 type VoiceState = 'idle' | 'listening' | 'transcribing' | 'thinking' | 'speaking';
@@ -45,14 +45,21 @@ export function VoiceScreen() {
     setVoiceState('speaking');
     try {
       await speakText(text, lang);
-    } catch {
-      setErrorMsg('Voice response could not be played. You can still read the answer below.');
+    } catch (error) {
+      const message = error instanceof TTSServiceError
+        ? error.message
+        : 'I generated the answer, but could not play the voice response.';
+      setErrorMsg(message);
     } finally {
       setVoiceState('idle');
     }
   }, []);
 
-  const handleRecognizedText = useCallback(async (recognizedText: string, languageHint?: LanguageCode) => {
+  const handleRecognizedText = useCallback(async (
+    recognizedText: string,
+    languageHint?: LanguageCode,
+    autoSpeak = true
+  ) => {
     if (!recognizedText.trim()) {
       setVoiceState('idle');
       return;
@@ -67,6 +74,7 @@ export function VoiceScreen() {
       role: 'user',
       text: recognizedText,
       timestamp: Date.now(),
+      language: detectedLanguage,
     };
     const nextExchanges = [...exchanges, userExchange];
     setExchanges(prev => [...prev, {
@@ -83,8 +91,10 @@ export function VoiceScreen() {
         role: 'assistant',
         text: response,
         timestamp: Date.now(),
+        language: detectedLanguage,
       }]);
-      void speakResponse(response, detectedLanguage);
+      if (autoSpeak) void speakResponse(response, detectedLanguage);
+      else setVoiceState('idle');
     } catch (error) {
       const message = error instanceof AIServiceError
         ? error.message
@@ -139,7 +149,7 @@ export function VoiceScreen() {
     const text = textInput.trim();
     if (!text) return;
     setTextInput('');
-    handleRecognizedText(text);
+    void handleRecognizedText(text, undefined, false);
   }, [textInput, handleRecognizedText]);
 
   // Stop speech when language changes
@@ -275,26 +285,22 @@ export function VoiceScreen() {
                 {ex.role === 'user' && (
                   <span className="block text-[10px] font-bold text-market-deep/60 mb-1">You said:</span>
                 )}
-                {ex.text}
+                <div className="flex items-start gap-2">
+                  <span className="flex-1">{ex.text}</span>
+                  {ex.role === 'assistant' && (
+                    <button
+                      type="button"
+                      onClick={() => void speakResponse(ex.text, ex.language || responseLanguage)}
+                      aria-label="Play voice response"
+                      className="shrink-0 p-1 rounded-full text-brand-deep hover:bg-white/60 transition-colors"
+                    >
+                      <Volume2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
-          {voiceState === 'speaking' && (
-            <div className="flex justify-center">
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => {
-                  const lastAssistant = [...exchanges].reverse().find(e => e.role === 'assistant');
-                  if (lastAssistant) void speakResponse(lastAssistant.text, responseLanguage);
-                }}
-                className="shadow-sm"
-              >
-                <Volume2 size={15} />
-                {t('playResponse')}
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
@@ -328,7 +334,7 @@ export function VoiceScreen() {
             {suggestions.map((s, i) => (
               <button
                 key={i}
-                onClick={() => handleRecognizedText(s)}
+                onClick={() => void handleRecognizedText(s, undefined, false)}
                 className="px-3.5 py-2.5 rounded-full bg-surface-card border border-line text-sm font-medium text-ink hover:border-brand-mid hover:bg-brand-tint transition-colors"
               >
                 {s}

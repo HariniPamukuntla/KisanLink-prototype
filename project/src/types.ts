@@ -93,6 +93,7 @@ export interface VoiceExchange {
   role: 'user' | 'assistant';
   text: string;
   timestamp: number;
+  language?: LanguageCode;
 }
 
 export interface ConnectivityInfo {
