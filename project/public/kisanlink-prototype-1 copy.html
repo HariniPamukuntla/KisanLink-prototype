@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KisanLink — बाजार शेतकऱ्यापर्यंत</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Sans+Oriya:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F0DF; --paper-deep:#EDE4C8; --ink:#22271F; --ink-soft:#5B5A4E;
+    --green-deep:#1B4332; --green-mid:#2F6D46; --green-soft:#DCEEDD;
+    --turmeric:#D9A227; --turmeric-deep:#B9820F; --turmeric-soft:#F6E6BB;
+    --amber:#C97B2E; --amber-soft:#F4E2C8; --red:#B23A2E; --red-soft:#F4DAD5;
+    --sky:#2E6488; --sky-soft:#DCEAF1; --card:#FFFDF6; --line:#E1D7B8;
+    --shadow: 0 10px 30px rgba(34,39,31,0.14);
+    --r-sm:10px; --r-md:16px; --r-lg:26px;
+    --font-stack:'Poppins','Noto Sans Devanagari','Noto Sans Gujarati','Noto Sans Bengali','Noto Sans Tamil','Noto Sans Telugu','Noto Sans Kannada','Noto Sans Malayalam','Noto Sans Gurmukhi','Noto Sans Oriya','Noto Nastaliq Urdu',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background: radial-gradient(circle at 20% 10%, #EAE2C6 0%, #DDD3AC 55%, #CDC091 100%);
+    font-family:var(--font-stack);
+    color:var(--ink);
+    display:flex; align-items:center; justify-content:center; padding:28px 12px;
+  }
+  .mr{ font-family:var(--font-stack); }
+  body.rtl [data-i18n], body.rtl .otp-box::placeholder{ direction:rtl; }
+
+  .phone{
+    position:relative; width:390px; max-width:100%; height:844px; max-height:94vh;
+    background:var(--paper); border-radius:46px; border:10px solid #14150F;
+    box-shadow: var(--shadow), 0 0 0 2px #34362A inset; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:150px; height:26px; background:#14150F; border-radius:0 0 18px 18px; z-index:30; }
+
+  .statusbar{ display:flex; align-items:center; justify-content:space-between; padding:16px 22px 8px; font-size:12.5px; font-weight:600; color:var(--ink); background:var(--paper); flex-shrink:0; }
+  .statusbar .right-group{ display:flex; align-items:center; }
+  .conn-pill{ display:flex; align-items:center; gap:6px; background:var(--green-soft); color:var(--green-deep); padding:5px 11px; border-radius:999px; font-size:11.5px; font-weight:600; cursor:pointer; border:1px solid rgba(27,67,50,0.15); }
+  .conn-pill.mode-call{ background:var(--turmeric-soft); color:var(--turmeric-deep); }
+  .conn-pill.mode-sms{ background:var(--sky-soft); color:var(--sky); }
+  .lang-globe{ font-size:16px; cursor:pointer; margin-left:9px; }
+
+  .topbar{ padding:6px 22px 16px; flex-shrink:0; }
+  .back-btn{ background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer; padding:0 0 8px; margin:0; }
+  .brand{ display:flex; align-items:baseline; gap:8px; margin-bottom:2px; }
+  .brand .mark{ font-size:19px; font-weight:800; letter-spacing:-0.02em; color:var(--green-deep); font-family:'Poppins'; }
+  .brand .mark span{ color:var(--turmeric); }
+  .screen-title{ font-size:22px; font-weight:700; margin:2px 0 0; color:var(--ink); }
+  .screen-sub{ font-size:13px; color:var(--ink-soft); margin-top:3px; max-width:290px; line-height:1.5; }
+
+  .screens{ position:relative; flex:1; overflow:hidden; }
+  .screen{ position:absolute; inset:0; display:none; flex-direction:column; overflow-y:auto; padding-bottom:110px; }
+  .screen.active{ display:flex; }
+  .screen.flush{ padding-bottom:24px; }
+  .screen-body{ padding:0 20px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--r-md); padding:16px 17px; }
+  .card-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .label{ font-size:12.5px; color:var(--ink-soft); font-weight:500; }
+  .value-big{ font-size:24px; font-weight:700; color:var(--green-deep); }
+  .chip{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:999px; }
+  .chip.green{ background:var(--green-soft); color:var(--green-deep); }
+  .chip.amber{ background:var(--amber-soft); color:var(--amber); }
+  .chip.red{ background:var(--red-soft); color:var(--red); }
+  .chip.sky{ background:var(--sky-soft); color:var(--sky); }
+  .chip.gold{ background:var(--turmeric-soft); color:var(--turmeric-deep); }
+
+  .quick-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .quick-btn{ background:var(--card); border:1px solid var(--line); border-radius:var(--r-md); padding:16px 10px; text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .quick-btn:active{ transform:scale(0.96); }
+  .quick-btn .icon{ font-size:26px; }
+  .quick-btn .cap{ font-size:13px; font-weight:600; }
+
+  .fab-mic{ position:absolute; left:50%; bottom:96px; transform:translateX(-50%); width:74px; height:74px; border-radius:50%; background:linear-gradient(160deg, var(--turmeric) 0%, var(--turmeric-deep) 100%); box-shadow:0 10px 24px rgba(185,130,15,0.45); display:flex; align-items:center; justify-content:center; font-size:30px; color:#fff; border:none; cursor:pointer; z-index:20; }
+  .fab-mic-label{ position:absolute; left:50%; bottom:78px; transform:translateX(-50%); font-size:12px; font-weight:700; color:var(--turmeric-deep); z-index:20; }
+
+  .bottomnav{ position:absolute; left:0; right:0; bottom:0; justify-content:space-between; background:var(--card); border-top:1px solid var(--line); padding:9px 6px 14px; z-index:25; }
+  .navbtn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; cursor:pointer; padding:5px 2px; color:var(--ink-soft); font-family:inherit; }
+  .navbtn .n-icon{ font-size:19px; }
+  .navbtn .n-cap{ font-size:9.5px; font-weight:600; }
+  .navbtn.active{ color:var(--green-deep); }
+
+  .mic-hero{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:8px 0 4px; }
+  .mic-ring{ width:96px; height:96px; border-radius:50%; background:radial-gradient(circle at 35% 30%, var(--turmeric) 0%, var(--turmeric-deep) 70%); display:flex; align-items:center; justify-content:center; font-size:38px; color:#fff; position:relative; box-shadow:0 0 0 8px rgba(217,162,39,0.18); }
+  .mic-ring.listening{ animation:pulse 1.4s infinite; }
+  @keyframes pulse{ 0%{ box-shadow:0 0 0 8px rgba(217,162,39,0.18);} 50%{ box-shadow:0 0 0 16px rgba(217,162,39,0.08);} 100%{ box-shadow:0 0 0 8px rgba(217,162,39,0.18);} }
+  .prompt-line{ font-size:15px; font-weight:600; text-align:center; color:var(--ink); }
+  .chips-row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:2px 6px; }
+  .suggest-chip{ background:var(--paper-deep); border:1px solid var(--line); border-radius:999px; padding:7px 13px; font-size:12.5px; font-weight:500; cursor:pointer; color:var(--ink); }
+  .chatlog{ display:flex; flex-direction:column; gap:10px; padding-top:4px; min-height:120px; }
+  .bubble{ max-width:78%; padding:10px 14px; border-radius:16px; font-size:14px; line-height:1.5; opacity:0; transform:translateY(6px); animation:rise .35s forwards; }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+  .bubble.farmer{ align-self:flex-end; background:var(--turmeric-soft); color:#5A3E0B; border-bottom-right-radius:4px; }
+  .bubble.ai{ align-self:flex-start; background:var(--green-soft); color:var(--green-deep); border-bottom-left-radius:4px; }
+  .replay-btn{ align-self:center; margin-top:6px; background:var(--green-deep); color:#fff; border:none; padding:9px 18px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .opt-card{ border-radius:var(--r-md); padding:14px; border:1.5px solid var(--line); background:var(--card); }
+  .opt-card.win{ border-color:var(--green-mid); background:var(--green-soft); }
+  .opt-card .opt-name{ font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+  .opt-card .opt-price{ font-size:20px; font-weight:700; margin-top:2px; }
+  .opt-card.win .opt-price{ color:var(--green-deep); }
+  .breakdown{ display:flex; flex-direction:column; gap:6px; font-size:13px; }
+  .breakdown .b-row{ display:flex; justify-content:space-between; }
+  .breakdown .b-row.total{ font-weight:700; border-top:1px dashed var(--line); padding-top:7px; margin-top:2px; }
+  .rec-banner{ background:var(--green-deep); color:#fff; border-radius:var(--r-md); padding:14px 16px; display:flex; gap:10px; align-items:flex-start; }
+  .rec-banner .rt{ font-size:14px; line-height:1.55; }
+  .decision-row{ display:flex; gap:8px; }
+  .decision-pill{ flex:1; text-align:center; padding:10px 4px; border-radius:12px; font-size:13px; font-weight:700; border:1.5px solid var(--line); color:var(--ink-soft); }
+  .decision-pill.chosen.sell{ background:var(--green-soft); border-color:var(--green-mid); color:var(--green-deep); }
+
+  .buyer-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--r-lg); padding:18px; }
+  .buyer-head{ display:flex; align-items:center; gap:12px; }
+  .buyer-logo{ width:46px; height:46px; border-radius:12px; background:var(--turmeric-soft); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .buyer-name{ font-weight:700; font-size:16px; }
+  .match-tags{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+  .tag{ background:var(--paper-deep); border-radius:8px; padding:5px 9px; font-size:11.5px; color:var(--ink-soft); font-weight:500; }
+  .btn-primary{ width:100%; background:var(--green-deep); color:#fff; border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:4px; }
+  .btn-ghost{ width:100%; background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); border-radius:14px; padding:13px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+  .dial-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px 0 2px; }
+  .trend-chip{ display:inline-flex; align-items:center; gap:4px; }
+  .check-list{ display:flex; flex-direction:column; gap:11px; }
+  .check-row{ display:flex; justify-content:space-between; align-items:center; font-size:13.5px; }
+  .check-row .cl-label{ color:var(--ink-soft); }
+  .check-row .cl-val{ font-weight:700; }
+  .feedback-note{ background:var(--amber-soft); border-radius:var(--r-md); padding:12px 14px; font-size:12.5px; color:var(--amber); line-height:1.5; }
+
+  .need-banner{ background:var(--sky-soft); color:var(--sky); border-radius:var(--r-md); padding:13px 15px; font-size:13.5px; font-weight:600; }
+  .stackbar{ display:flex; height:34px; border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+  .seg{ height:100%; display:flex; align-items:center; justify-content:center; font-size:10.5px; color:#fff; font-weight:700; width:0%; transition:width 1s ease; }
+  .farmer-list{ display:flex; flex-direction:column; gap:8px; }
+  .f-row{ display:flex; justify-content:space-between; align-items:center; font-size:13px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
+  .f-row.me{ border-color:var(--turmeric); background:var(--turmeric-soft); }
+  .total-row{ display:flex; justify-content:space-between; align-items:baseline; padding:2px 2px; }
+  .total-row .tv{ font-size:22px; font-weight:800; color:var(--green-deep); }
+
+  .lang-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .lang-chip{ position:relative; background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:12px 10px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; font-family:var(--font-stack); }
+  .lang-chip.selected{ border-color:var(--green-mid); background:var(--green-soft); }
+  .lang-chip .lc-native{ font-size:16px; font-weight:700; }
+  .lang-chip .lc-eng{ font-size:10.5px; color:var(--ink-soft); font-family:'Poppins'; }
+  .lang-chip .lc-check{ position:absolute; top:6px; right:8px; font-size:12px; color:var(--green-deep); opacity:0; }
+  .lang-chip.selected .lc-check{ opacity:1; }
+
+  .phone-input-row{ display:flex; align-items:center; gap:8px; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .phone-input-row .cc{ font-weight:700; color:var(--ink-soft); font-family:'Poppins'; }
+  .phone-input{ border:none; outline:none; background:none; font-size:17px; font-weight:600; flex:1; font-family:'Poppins'; letter-spacing:0.5px; min-width:0; }
+  .or-divider{ text-align:center; color:var(--ink-soft); font-size:12px; margin:2px 0; }
+  .mic-alt{ display:flex; align-items:center; justify-content:center; gap:6px; }
+  .otp-row{ display:flex; gap:10px; justify-content:center; margin-top:6px; }
+  .otp-box{ width:48px; height:56px; text-align:center; font-size:22px; font-weight:700; border:1.5px solid var(--line); border-radius:12px; font-family:'Poppins'; }
+  .otp-box:focus{ border-color:var(--green-mid); outline:none; }
+
+  .modal-overlay{ position:absolute; inset:0; background:rgba(20,21,15,0.55); z-index:50; display:none; align-items:flex-end; justify-content:center; }
+  .modal-overlay.show{ display:flex; }
+  .modal-sheet{ width:100%; background:var(--paper); border-radius:24px 24px 0 0; padding:24px 22px 30px; box-shadow:0 -10px 30px rgba(0,0,0,0.25); }
+  .modal-sheet p{ font-size:15px; line-height:1.6; margin:0 0 18px; }
+  .modal-btns{ display:flex; gap:10px; }
+  .lockbanner{ text-align:center; padding:26px 10px; }
+  .lockbanner .licon{ font-size:44px; }
+  .lockbanner .ltext{ font-weight:800; font-size:17px; color:var(--green-deep); margin-top:8px; }
+  .lockbanner .lsub{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+
+  footer.credit{ text-align:center; color:var(--ink-soft); font-size:11px; margin-top:18px; font-family:'Poppins'; opacity:0.7; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="statusbar">
+    <span id="clockDisplay">१०:४२</span>
+    <div class="right-group">
+      <div class="conn-pill mr" id="connPill" onclick="cycleConn()">📶 नेटवर्क उपलब्ध</div>
+      <span class="lang-globe" onclick="showScreen('lang')" title="Change language">🌐</span>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <!-- SCREEN 0: LANGUAGE SELECT -->
+    <section class="screen active flush mr" id="screen-lang">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Kisan<span>Link</span></span></div>
+        <div class="screen-title" data-i18n="lang_title">तुमची भाषा निवडा</div>
+        <div class="screen-sub">Choose the language you're most comfortable with</div>
+      </div>
+      <div class="screen-body">
+        <div class="lang-grid">
+          <button class="lang-chip selected" data-code="mr" onclick="selectLang('mr')"><span class="lc-check">✓</span><span class="lc-native">मराठी</span><span class="lc-eng">Marathi</span></button>
+          <button class="lang-chip" data-code="hi" onclick="selectLang('hi')"><span class="lc-check">✓</span><span class="lc-native">हिंदी</span><span class="lc-eng">Hindi</span></button>
+          <button class="lang-chip" data-code="en" onclick="selectLang('en')"><span class="lc-check">✓</span><span class="lc-native">English</span><span class="lc-eng">English</span></button>
+          <button class="lang-chip" data-code="gu" onclick="selectLang('gu')"><span class="lc-check">✓</span><span class="lc-native">ગુજરાતી</span><span class="lc-eng">Gujarati</span></button>
+          <button class="lang-chip" data-code="bn" onclick="selectLang('bn')"><span class="lc-check">✓</span><span class="lc-native">বাংলা</span><span class="lc-eng">Bengali</span></button>
+          <button class="lang-chip" data-code="ta" onclick="selectLang('ta')"><span class="lc-check">✓</span><span class="lc-native">தமிழ்</span><span class="lc-eng">Tamil</span></button>
+          <button class="lang-chip" data-code="te" onclick="selectLang('te')"><span class="lc-check">✓</span><span class="lc-native">తెలుగు</span><span class="lc-eng">Telugu</span></button>
+          <button class="lang-chip" data-code="kn" onclick="selectLang('kn')"><span class="lc-check">✓</span><span class="lc-native">ಕನ್ನಡ</span><span class="lc-eng">Kannada</span></button>
+          <button class="lang-chip" data-code="ml" onclick="selectLang('ml')"><span class="lc-check">✓</span><span class="lc-native">മലയാളം</span><span class="lc-eng">Malayalam</span></button>
+          <button class="lang-chip" data-code="pa" onclick="selectLang('pa')"><span class="lc-check">✓</span><span class="lc-native">ਪੰਜਾਬੀ</span><span class="lc-eng">Punjabi</span></button>
+          <button class="lang-chip" data-code="or" onclick="selectLang('or')"><span class="lc-check">✓</span><span class="lc-native">ଓଡ଼ିଆ</span><span class="lc-eng">Odia</span></button>
+          <button class="lang-chip" data-code="as" onclick="selectLang('as')"><span class="lc-check">✓</span><span class="lc-native">অসমীয়া</span><span class="lc-eng">Assamese</span></button>
+          <button class="lang-chip" data-code="ur" onclick="selectLang('ur')"><span class="lc-check">✓</span><span class="lc-native">اردو</span><span class="lc-eng">Urdu</span></button>
+        </div>
+        <button class="btn-primary" data-i18n="continue_btn" onclick="onLangContinue()">पुढे जा</button>
+      </div>
+    </section>
+
+    <!-- SCREEN: SIGN IN -->
+    <section class="screen flush mr" id="screen-signin">
+      <div class="topbar">
+        <button class="back-btn" onclick="showScreen('lang')">←</button>
+        <div class="brand"><span class="mark">Kisan<span>Link</span></span></div>
+        <div class="screen-title" data-i18n="signin_title">साइन इन करा</div>
+        <div class="screen-sub" data-i18n="signin_sub">पुढे जाण्यासाठी तुमचा मोबाइल नंबर टाका</div>
+      </div>
+      <div class="screen-body">
+        <div class="card">
+          <div class="label" data-i18n="phone_ph" style="margin-bottom:8px;">मोबाइल नंबर</div>
+          <div class="phone-input-row">
+            <span class="cc">+91</span>
+            <input id="phoneInput" type="tel" inputmode="numeric" maxlength="10" placeholder="9876543210" class="phone-input">
+          </div>
+        </div>
+        <button class="btn-primary" data-i18n="send_otp" onclick="onSendOtp()">OTP पाठवा</button>
+        <div class="or-divider" data-i18n="or_word">किंवा</div>
+        <button class="btn-ghost mic-alt" onclick="onSendOtp()">🎤 <span data-i18n="voice_alt">बोलून साइन इन करा</span></button>
+      </div>
+    </section>
+
+    <!-- SCREEN: OTP -->
+    <section class="screen flush mr" id="screen-otp">
+      <div class="topbar">
+        <button class="back-btn" onclick="showScreen('signin')">←</button>
+        <div class="brand"><span class="mark">Kisan<span>Link</span></span></div>
+        <div class="screen-title" data-i18n="otp_title">OTP पडताळणी करा</div>
+        <div class="screen-sub" data-i18n="otp_sub">तुमच्या नंबरवर पाठवलेला ४ अंकी कोड टाका</div>
+      </div>
+      <div class="screen-body">
+        <div class="card" style="text-align:center;">
+          <div class="label" style="margin-bottom:4px;">+91 <span id="otpPhoneDisplay">—</span></div>
+          <div class="otp-row">
+            <input type="tel" maxlength="1" class="otp-box" oninput="otpAdvance(this)">
+            <input type="tel" maxlength="1" class="otp-box" oninput="otpAdvance(this)">
+            <input type="tel" maxlength="1" class="otp-box" oninput="otpAdvance(this)">
+            <input type="tel" maxlength="1" class="otp-box" oninput="otpAdvance(this)">
+          </div>
+        </div>
+        <button class="btn-primary" data-i18n="otp_verify" onclick="onVerifyOtp()">पडताळणी करा आणि पुढे जा</button>
+        <button class="btn-ghost" data-i18n="otp_resend" onclick="resendOtp()">कोड पुन्हा पाठवा</button>
+      </div>
+    </section>
+
+    <!-- SCREEN 1: HOME -->
+    <section class="screen mr" id="screen-home">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Kisan<span>Link</span></span></div>
+        <div class="screen-title" data-i18n="greeting">नमस्कार, रमेश 👋</div>
+        <div class="screen-sub" data-i18n="home_sub">आजचा आढावा — तुमच्या मालाची स्थिती आणि उपलब्ध संधी</div>
+      </div>
+      <div class="screen-body">
+        <div class="card">
+          <div class="label" data-i18n="crop_label">तुमचे पीक</div>
+          <div class="value-big">🧅 कांदा — २० क्विंटल</div>
+        </div>
+        <div class="card" style="border-color:var(--green-mid); background:var(--green-soft);">
+          <div class="label" data-i18n="best_label" style="color:var(--green-deep)">सर्वोत्तम उपलब्ध निव्वळ पर्याय</div>
+          <div class="card-row" style="margin-top:4px;">
+            <div class="value-big">₹५०,०००</div>
+            <span class="chip green">पुणे खरेदीदार</span>
+          </div>
+        </div>
+        <div class="card" onclick="showScreen('buyer')" style="cursor:pointer;">
+          <div class="card-row">
+            <div>
+              <div class="label" data-i18n="buyer_label">खरेदीदार मागणी</div>
+              <div style="font-weight:700; font-size:15px; margin-top:2px;">🔔 <span data-i18n="buyer_value">२ जुळणारे खरेदीदार</span></div>
+            </div>
+            <span class="chip gold">पहा</span>
+          </div>
+        </div>
+        <div class="quick-grid">
+          <div class="quick-btn" onclick="showScreen('advisor')"><span class="icon">💰</span><span class="cap" data-i18n="quick_price">आजचा भाव</span></div>
+          <div class="quick-btn" onclick="showScreen('advisor')"><span class="icon">🌾</span><span class="cap" data-i18n="quick_mymaal">माझा माल</span></div>
+          <div class="quick-btn" onclick="showScreen('ekta')"><span class="icon">🚚</span><span class="cap" data-i18n="quick_transport">वाहतूक</span></div>
+          <div class="quick-btn" onclick="showScreen('trust')"><span class="icon">💳</span><span class="cap" data-i18n="quick_payment">पेमेंट</span></div>
+        </div>
+        <footer class="credit">SIH26132 — Maharashtra Agricultural Market Intelligence Platform</footer>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: KISANVOICE -->
+    <section class="screen mr" id="screen-voice">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Kisan<span>Voice</span></span></div>
+        <div class="screen-title">📞 <span data-i18n="voice_title">फक्त कॉल करा. फक्त बोला.</span></div>
+      </div>
+      <div class="screen-body">
+        <div class="mic-hero">
+          <div class="mic-ring" id="micRing">🎤</div>
+          <div class="prompt-line">"<span data-i18n="voice_prompt">बोला, तुम्हाला काय माहिती हवी आहे?</span>"</div>
+        </div>
+        <div class="chips-row">
+          <div class="suggest-chip" onclick="playConversation()">कांद्याचा भाव?</div>
+          <div class="suggest-chip" onclick="playConversation()">आज विकू का?</div>
+          <div class="suggest-chip" onclick="playConversation()">माझ्याकडे २० पोती आहेत</div>
+        </div>
+        <div class="chatlog" id="chatlog"></div>
+        <button class="replay-btn" onclick="playConversation()">🔁 संभाषण पुन्हा ऐका</button>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: KISAN ADVISOR -->
+    <section class="screen mr" id="screen-advisor">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Kisan<span>Advisor</span></span></div>
+        <div class="screen-title" data-i18n="advisor_title">विक्री सल्लागार</div>
+        <div class="screen-sub" data-i18n="advisor_sub">कांदा — २० क्विंटल · केवळ भाव नाही, अंदाजित निव्वळ परतावा</div>
+      </div>
+      <div class="screen-body">
+        <div class="compare-grid">
+          <div class="opt-card">
+            <div class="opt-name">नाशिक APMC</div>
+            <div class="opt-price">₹२,४५०</div>
+          </div>
+          <div class="opt-card win">
+            <div class="opt-name">पुणे खरेदीदार</div>
+            <div class="opt-price">₹२,७००</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="label" style="margin-bottom:8px;">पुणे खरेदीदाराचा हिशोब</div>
+          <div class="breakdown">
+            <div class="b-row"><span>विक्री मूल्य</span><span>₹५४,०००</span></div>
+            <div class="b-row"><span>वाहतूक</span><span>−₹३,०००</span></div>
+            <div class="b-row"><span>इतर खर्च</span><span>−₹१,०००</span></div>
+            <div class="b-row total"><span>अंदाजित निव्वळ</span><span>₹५०,०००</span></div>
+          </div>
+        </div>
+        <div class="rec-banner">
+          <span style="font-size:20px;">🟢</span>
+          <div class="rt"><b>तुमच्यासाठी पुण्याचा खरेदीदार चांगला पर्याय आहे.</b><br>वाहतूक खर्च वजा केल्यानंतरही जास्त निव्वळ परतावा मिळतो.</div>
+        </div>
+        <div class="decision-row">
+          <div class="decision-pill chosen sell">🟢 विक्री करा</div>
+          <div class="decision-pill">🟡 थांबा</div>
+          <div class="decision-pill">🔵 तुलना करा</div>
+        </div>
+        <div class="card" style="font-size:12.5px; color:var(--ink-soft); line-height:1.6;">
+          हा निर्णय उपलब्ध बाजार माहितीवर आधारित सल्ला आहे, हमी भाकीत नाही. बाजारभाव बदलू शकतो.
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: BUYER MATCH -->
+    <section class="screen mr" id="screen-buyer">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Direct<span>BuyerMatch</span></span></div>
+        <div class="screen-title" data-i18n="buyer_title">खरेदीदार जुळणी</div>
+        <div class="screen-sub" data-i18n="buyer_sub">तुमच्या मालाशी जुळणारे सत्यापित खरेदीदार</div>
+      </div>
+      <div class="screen-body">
+        <div class="buyer-card">
+          <div class="buyer-head">
+            <div class="buyer-logo">🏭</div>
+            <div>
+              <div class="buyer-name">ABC Foods</div>
+              <span class="chip green">✅ सत्यापित</span>
+            </div>
+          </div>
+          <div class="card-row" style="margin-top:14px;">
+            <div>
+              <div class="label">आवश्यक</div>
+              <div style="font-weight:700;">१०० क्विंटल कांदा · ग्रेड A</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="label">ऑफर</div>
+              <div style="font-weight:800; color:var(--green-deep);">₹२,७००/क्विं</div>
+            </div>
+          </div>
+          <div class="match-tags">
+            <span class="tag">🌾 पीक जुळते</span>
+            <span class="tag">📍 पुणे</span>
+            <span class="tag">🚚 वितरण: २ दिवस</span>
+            <span class="tag">🛡️ Trust 91</span>
+          </div>
+          <button class="btn-primary" onclick="showScreen('trust')">ऑफर पहा</button>
+        </div>
+        <div class="buyer-card">
+          <div class="buyer-head">
+            <div class="buyer-logo" style="background:var(--sky-soft);">🏬</div>
+            <div>
+              <div class="buyer-name">Vasant Traders</div>
+              <span class="chip sky">🔎 पडताळणी सुरू</span>
+            </div>
+          </div>
+          <div class="match-tags" style="margin-top:12px;">
+            <span class="tag">🌾 पीक जुळते</span>
+            <span class="tag">📍 नाशिक</span>
+            <span class="tag">🚚 वितरण: १ दिवस</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 5: TRUST CARD -->
+    <section class="screen mr" id="screen-trust">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Kisan<span>TrustCard</span></span></div>
+        <div class="screen-title">🛡️ ABC Foods</div>
+        <div class="screen-sub" data-i18n="trust_sub">विश्वास स्कोअर मागील व्यवहार आणि पेमेंट वर्तनावर आधारित</div>
+      </div>
+      <div class="screen-body">
+        <div class="dial-wrap">
+          <div class="label" data-i18n="trust_title">विश्वास स्कोअर</div>
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="58" fill="none" stroke="#EDE4C8" stroke-width="14"/>
+            <circle id="dialArc" cx="70" cy="70" r="58" fill="none" stroke="#2F6D46" stroke-width="14"
+              stroke-linecap="round" stroke-dasharray="364" stroke-dashoffset="364" transform="rotate(-90 70 70)"/>
+            <text x="70" y="66" text-anchor="middle" font-size="30" font-weight="800" fill="#1B4332" font-family="Poppins">91</text>
+            <text x="70" y="86" text-anchor="middle" font-size="11" fill="#5B5A4E" font-family="Poppins">/ 100</text>
+          </svg>
+          <span class="chip green trend-chip">▲ गेल्या महिन्यात सुधारणा</span>
+        </div>
+        <div class="card check-list">
+          <div class="check-row"><span class="cl-label">ओळख / व्यवसाय पडताळणी</span><span class="cl-val" style="color:var(--green-deep);">✅ पूर्ण</span></div>
+          <div class="check-row"><span class="cl-label">पूर्ण झालेले व्यवहार</span><span class="cl-val">१२४</span></div>
+          <div class="check-row"><span class="cl-label">वेळेवर पेमेंट</span><span class="cl-val" style="color:var(--green-deep);">९६%</span></div>
+          <div class="check-row"><span class="cl-label">सरासरी पेमेंट वेळ</span><span class="cl-val">१.८ दिवस</span></div>
+          <div class="check-row"><span class="cl-label">तक्रारी</span><span class="cl-val">२</span></div>
+          <div class="check-row"><span class="cl-label">शेतकरी अभिप्राय</span><span class="cl-val">⭐ ४.६ / ५</span></div>
+        </div>
+        <div class="feedback-note">ℹ️ विश्वास स्कोअर कायमस्वरूपी नाही — नवीन व्यवहार आणि पेमेंट वर्तनानुसार दर महिन्याला अद्ययावत होतो.</div>
+        <button class="btn-primary" onclick="showScreen('buyer')">खरेदीदार स्वीकारा</button>
+      </div>
+    </section>
+
+    <!-- SCREEN 6: EKTA VIKRI -->
+    <section class="screen mr" id="screen-ekta">
+      <div class="topbar">
+        <div class="brand"><span class="mark">Ekta<span>Vikri</span></span></div>
+        <div class="screen-title">👨‍🌾 <span data-i18n="ekta_title">गट विक्री</span></div>
+        <div class="screen-sub" data-i18n="ekta_sub">छोट्या शेतकऱ्यांनी एकत्र येऊन मोठ्या खरेदीदारापर्यंत पोहोचणे</div>
+      </div>
+      <div class="screen-body">
+        <div class="need-banner">ABC Foods ला १०० क्विंटल कांदा हवा आहे. जवळच्या शेतकऱ्यांचा माल एकत्र करून हे शक्य आहे.</div>
+        <div class="card">
+          <div class="stackbar" id="stackbar">
+            <div class="seg" style="background:#2F6D46;" id="seg1">रमेश</div>
+            <div class="seg" style="background:#3F8354;" id="seg2">B</div>
+            <div class="seg" style="background:#57A06A;" id="seg3">C</div>
+            <div class="seg" style="background:#D9A227;" id="seg4">D</div>
+            <div class="seg" style="background:#C97B2E;" id="seg5">E</div>
+          </div>
+          <div class="total-row" style="margin-top:10px;">
+            <span class="label">एकूण जमा माल</span>
+            <span class="tv" id="totalQ">० क्विंटल</span>
+          </div>
+        </div>
+        <div class="farmer-list">
+          <div class="f-row me"><span>🧑‍🌾 रमेश (तुम्ही)</span><span>२० क्विं</span></div>
+          <div class="f-row"><span>शेतकरी B</span><span>३५ क्विं</span></div>
+          <div class="f-row"><span>शेतकरी C</span><span>४० क्विं</span></div>
+          <div class="f-row"><span>शेतकरी D</span><span>५५ क्विं</span></div>
+          <div class="f-row"><span>शेतकरी E</span><span>५० क्विं</span></div>
+        </div>
+        <button class="btn-primary" onclick="openConfirm()">गट विक्रीत सामील व्हा</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="fab-mic-label mr" id="fabLabel" data-i18n="nav_voice" style="display:none;">बोला</div>
+  <button class="fab-mic" onclick="showScreen('voice')" style="display:none;">🎤</button>
+
+  <nav class="bottomnav mr" style="display:none;">
+    <button class="navbtn active" data-tab="home" onclick="showScreen('home')"><span class="n-icon">🏠</span><span class="n-cap" data-i18n="nav_home">घर</span></button>
+    <button class="navbtn" data-tab="voice" onclick="showScreen('voice')"><span class="n-icon">🎤</span><span class="n-cap" data-i18n="nav_voice">बोला</span></button>
+    <button class="navbtn" data-tab="advisor" onclick="showScreen('advisor')"><span class="n-icon">🧠</span><span class="n-cap" data-i18n="nav_advisor">सल्ला</span></button>
+    <button class="navbtn" data-tab="buyer" onclick="showScreen('buyer')"><span class="n-icon">🤝</span><span class="n-cap" data-i18n="nav_buyer">खरेदीदार</span></button>
+    <button class="navbtn" data-tab="trust" onclick="showScreen('trust')"><span class="n-icon">🛡️</span><span class="n-cap" data-i18n="nav_trust">विश्वास</span></button>
+    <button class="navbtn" data-tab="ekta" onclick="showScreen('ekta')"><span class="n-icon">👨‍🌾</span><span class="n-cap" data-i18n="nav_ekta">एकता</span></button>
+  </nav>
+
+  <div class="modal-overlay mr" id="modalOverlay">
+    <div class="modal-sheet" id="modalSheet"></div>
+  </div>
+</div>
+
+<script>
+  /* ===================== TRANSLATIONS ===================== */
+  const translations = {
+    mr:{ lang_title:"तुमची भाषा निवडा", nav_home:"घर", nav_voice:"बोला", nav_advisor:"सल्ला", nav_buyer:"खरेदीदार", nav_trust:"विश्वास", nav_ekta:"एकता",
+      greeting:"नमस्कार, रमेश 👋", home_sub:"आजचा आढावा — तुमच्या मालाची स्थिती आणि उपलब्ध संधी", crop_label:"तुमचे पीक", best_label:"सर्वोत्तम उपलब्ध निव्वळ पर्याय",
+      buyer_label:"खरेदीदार मागणी", buyer_value:"२ जुळणारे खरेदीदार", quick_price:"आजचा भाव", quick_mymaal:"माझा माल", quick_transport:"वाहतूक", quick_payment:"पेमेंट",
+      voice_title:"फक्त कॉल करा. फक्त बोला.", voice_prompt:"बोला, तुम्हाला काय माहिती हवी आहे?", advisor_title:"विक्री सल्लागार",
+      advisor_sub:"कांदा — २० क्विंटल · केवळ भाव नाही, अंदाजित निव्वळ परतावा", buyer_title:"खरेदीदार जुळणी", buyer_sub:"तुमच्या मालाशी जुळणारे सत्यापित खरेदीदार",
+      trust_title:"विश्वास स्कोअर", trust_sub:"मागील व्यवहार आणि पेमेंट वर्तनावर आधारित विश्वास स्कोअर", ekta_title:"गट विक्री",
+      ekta_sub:"छोट्या शेतकऱ्यांनी एकत्र येऊन मोठ्या खरेदीदारापर्यंत पोहोचणे", signin_title:"साइन इन करा", signin_sub:"पुढे जाण्यासाठी तुमचा मोबाइल नंबर टाका",
+      phone_ph:"मोबाइल नंबर", send_otp:"OTP पाठवा", or_word:"किंवा", voice_alt:"बोलून साइन इन करा", otp_title:"OTP पडताळणी करा",
+      otp_sub:"तुमच्या नंबरवर पाठवलेला ४ अंकी कोड टाका", otp_verify:"पडताळणी करा आणि पुढे जा", otp_resend:"कोड पुन्हा पाठवा", continue_btn:"पुढे जा", change_lang:"भाषा बदला" },
+
+    hi:{ lang_title:"अपनी भाषा चुनें", nav_home:"होम", nav_voice:"आवाज़", nav_advisor:"सलाहकार", nav_buyer:"खरीदार", nav_trust:"भरोसा", nav_ekta:"समूह",
+      greeting:"नमस्ते, रमेश 👋", home_sub:"आज का सारांश — आपकी उपज की स्थिति और उपलब्ध अवसर", crop_label:"आपकी फसल", best_label:"सर्वश्रेष्ठ उपलब्ध शुद्ध विकल्प",
+      buyer_label:"खरीदार मांग", buyer_value:"2 मिलते-जुलते खरीदार", quick_price:"आज का भाव", quick_mymaal:"मेरी उपज", quick_transport:"परिवहन", quick_payment:"भुगतान",
+      voice_title:"बस कॉल करें। बस बोलें।", voice_prompt:"बोलिए, आपको क्या जानकारी चाहिए?", advisor_title:"बिक्री सलाहकार",
+      advisor_sub:"प्याज — 20 क्विंटल · सिर्फ भाव नहीं, अनुमानित शुद्ध लाभ", buyer_title:"खरीदार मिलान", buyer_sub:"आपकी उपज से मेल खाते सत्यापित खरीदार",
+      trust_title:"भरोसा स्कोर", trust_sub:"पिछले लेन-देन और भुगतान व्यवहार पर आधारित भरोसा स्कोर", ekta_title:"सामूहिक बिक्री",
+      ekta_sub:"छोटे किसान मिलकर बड़े खरीदारों तक पहुँचते हैं", signin_title:"साइन इन करें", signin_sub:"जारी रखने के लिए अपना मोबाइल नंबर दर्ज करें",
+      phone_ph:"मोबाइल नंबर", send_otp:"OTP भेजें", or_word:"या", voice_alt:"बोलकर साइन इन करें", otp_title:"OTP सत्यापित करें",
+      otp_sub:"आपके नंबर पर भेजा गया 4 अंकों का कोड दर्ज करें", otp_verify:"सत्यापित करें और जारी रखें", otp_resend:"कोड फिर से भेजें", continue_btn:"आगे बढ़ें", change_lang:"भाषा बदलें" },
+
+    en:{ lang_title:"Choose your language", nav_home:"Home", nav_voice:"Voice", nav_advisor:"Advisor", nav_buyer:"Buyer", nav_trust:"Trust", nav_ekta:"Group",
+      greeting:"Hello, Ramesh 👋", home_sub:"Today's overview — status of your produce and available opportunities", crop_label:"Your crop", best_label:"Best available net option",
+      buyer_label:"Buyer demand", buyer_value:"2 matching buyers", quick_price:"Today's price", quick_mymaal:"My produce", quick_transport:"Transport", quick_payment:"Payment",
+      voice_title:"Just call. Just speak.", voice_prompt:"Speak, what information do you need?", advisor_title:"Selling Advisor",
+      advisor_sub:"Onion — 20 Quintal · not just price, estimated net return", buyer_title:"Buyer Match", buyer_sub:"Verified buyers matching your produce",
+      trust_title:"Trust Score", trust_sub:"Trust score based on past transactions and payment behaviour", ekta_title:"Group Selling",
+      ekta_sub:"Small farmers joining together to reach large buyers", signin_title:"Sign in", signin_sub:"Enter your mobile number to continue",
+      phone_ph:"Mobile number", send_otp:"Send OTP", or_word:"or", voice_alt:"Sign in by speaking", otp_title:"Verify OTP",
+      otp_sub:"Enter the 4-digit code sent to your number", otp_verify:"Verify & Continue", otp_resend:"Resend code", continue_btn:"Continue", change_lang:"Change language" },
+
+    gu:{ lang_title:"તમારી ભાષા પસંદ કરો", nav_home:"હોમ", nav_voice:"અવાજ", nav_advisor:"સલાહકાર", nav_buyer:"ખરીદનાર", nav_trust:"વિશ્વાસ", nav_ekta:"જૂથ",
+      greeting:"નમસ્તે, રમેશ 👋", home_sub:"આજનો સારાંશ — તમારા પાકની સ્થિતિ અને ઉપલબ્ધ તકો", crop_label:"તમારો પાક", best_label:"શ્રેષ્ઠ ઉપલબ્ધ ચોખ્ખો વિકલ્પ",
+      buyer_label:"ખરીદનારની માંગ", buyer_value:"2 મળતા ખરીદનારા", quick_price:"આજનો ભાવ", quick_mymaal:"મારો માલ", quick_transport:"પરિવહન", quick_payment:"ચુકવણી",
+      voice_title:"ફક્ત કૉલ કરો. ફક્ત બોલો.", voice_prompt:"બોલો, તમને શું માહિતી જોઈએ છે?", advisor_title:"વેચાણ સલાહકાર",
+      advisor_sub:"ડુંગળી — 20 ક્વિન્ટલ · ફક્ત ભાવ નહીં, અંદાજિત ચોખ્ખું વળતર", buyer_title:"ખરીદનાર મેચ", buyer_sub:"તમારા માલ સાથે મેળ ખાતા ચકાસાયેલા ખરીદનારા",
+      trust_title:"વિશ્વાસ સ્કોર", trust_sub:"અગાઉના વ્યવહારો અને ચુકવણી વર્તન પર આધારિત વિશ્વાસ સ્કોર", ekta_title:"સામૂહિક વેચાણ",
+      ekta_sub:"નાના ખેડૂતો ભેગા મળી મોટા ખરીદનારા સુધી પહોંચે છે", signin_title:"સાઇન ઇન કરો", signin_sub:"ચાલુ રાખવા તમારો મોબાઇલ નંબર દાખલ કરો",
+      phone_ph:"મોબાઇલ નંબર", send_otp:"OTP મોકલો", or_word:"અથવા", voice_alt:"બોલીને સાઇન ઇન કરો", otp_title:"OTP ચકાસો",
+      otp_sub:"તમારા નંબર પર મોકલેલો 4 અંકનો કોડ દાખલ કરો", otp_verify:"ચકાસો અને આગળ વધો", otp_resend:"કોડ ફરી મોકલો", continue_btn:"આગળ વધો", change_lang:"ભાષા બદલો" },
+
+    bn:{ lang_title:"আপনার ভাষা নির্বাচন করুন", nav_home:"হোম", nav_voice:"ভয়েস", nav_advisor:"উপদেষ্টা", nav_buyer:"ক্রেতা", nav_trust:"বিশ্বাস", nav_ekta:"দল",
+      greeting:"নমস্কার, রমেশ 👋", home_sub:"আজকের সারসংক্ষেপ — আপনার ফসলের অবস্থা এবং সুযোগ", crop_label:"আপনার ফসল", best_label:"সেরা উপলব্ধ নিট বিকল্প",
+      buyer_label:"ক্রেতার চাহিদা", buyer_value:"2 জন মিলে যাওয়া ক্রেতা", quick_price:"আজকের দাম", quick_mymaal:"আমার ফসল", quick_transport:"পরিবহন", quick_payment:"পেমেন্ট",
+      voice_title:"শুধু কল করুন। শুধু বলুন।", voice_prompt:"বলুন, আপনার কী তথ্য দরকার?", advisor_title:"বিক্রয় পরামর্শদাতা",
+      advisor_sub:"পেঁয়াজ — 20 কুইন্টাল · শুধু দাম নয়, আনুমানিক নিট মুনাফা", buyer_title:"ক্রেতা মিল", buyer_sub:"আপনার ফসলের সাথে মিলে যাওয়া যাচাইকৃত ক্রেতা",
+      trust_title:"বিশ্বাস স্কোর", trust_sub:"অতীতের লেনদেন ও পেমেন্ট আচরণের উপর ভিত্তি করে বিশ্বাস স্কোর", ekta_title:"দলগত বিক্রয়",
+      ekta_sub:"ছোট কৃষকরা একসাথে বড় ক্রেতার কাছে পৌঁছান", signin_title:"সাইন ইন করুন", signin_sub:"চালিয়ে যেতে আপনার মোবাইল নম্বর লিখুন",
+      phone_ph:"মোবাইল নম্বর", send_otp:"OTP পাঠান", or_word:"অথবা", voice_alt:"কথা বলে সাইন ইন করুন", otp_title:"OTP যাচাই করুন",
+      otp_sub:"আপনার নম্বরে পাঠানো 4 সংখ্যার কোড লিখুন", otp_verify:"যাচাই করে চালিয়ে যান", otp_resend:"কোড আবার পাঠান", continue_btn:"এগিয়ে যান", change_lang:"ভাষা পরিবর্তন করুন" },
+
+    ta:{ lang_title:"உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்", nav_home:"முகப்பு", nav_voice:"குரல்", nav_advisor:"ஆலோசகர்", nav_buyer:"வாங்குபவர்", nav_trust:"நம்பிக்கை", nav_ekta:"குழு",
+      greeting:"வணக்கம், ரமேஷ் 👋", home_sub:"இன்றைய சுருக்கம் — உங்கள் பயிரின் நிலை மற்றும் கிடைக்கும் வாய்ப்புகள்", crop_label:"உங்கள் பயிர்", best_label:"சிறந்த நிகர விருப்பம்",
+      buyer_label:"வாங்குபவர் தேவை", buyer_value:"2 பொருந்தும் வாங்குபவர்கள்", quick_price:"இன்றைய விலை", quick_mymaal:"என் விளைபொருள்", quick_transport:"போக்குவரத்து", quick_payment:"பணம் செலுத்துதல்",
+      voice_title:"அழையுங்கள். பேசுங்கள்.", voice_prompt:"பேசுங்கள், உங்களுக்கு என்ன தகவல் வேண்டும்?", advisor_title:"விற்பனை ஆலோசகர்",
+      advisor_sub:"வெங்காயம் — 20 குவிண்டல் · விலை மட்டுமல்ல, மதிப்பிடப்பட்ட நிகர லாபம்", buyer_title:"வாங்குபவர் பொருத்தம்", buyer_sub:"உங்கள் விளைபொருளுக்கு பொருந்தும் சரிபார்க்கப்பட்ட வாங்குபவர்கள்",
+      trust_title:"நம்பிக்கை மதிப்பெண்", trust_sub:"முந்தைய பரிவர்த்தனைகள் மற்றும் பணம் செலுத்தும் நடத்தையின் அடிப்படையிலான நம்பிக்கை மதிப்பெண்", ekta_title:"குழு விற்பனை",
+      ekta_sub:"சிறு விவசாயிகள் ஒன்றிணைந்து பெரிய வாங்குபவர்களை அடைதல்", signin_title:"உள்நுழையவும்", signin_sub:"தொடர உங்கள் மொபைல் எண்ணை உள்ளிடவும்",
+      phone_ph:"மொபைல் எண்", send_otp:"OTP அனுப்பவும்", or_word:"அல்லது", voice_alt:"பேசி உள்நுழையவும்", otp_title:"OTP சரிபார்க்கவும்",
+      otp_sub:"உங்கள் எண்ணுக்கு அனுப்பப்பட்ட 4 இலக்க குறியீட்டை உள்ளிடவும்", otp_verify:"சரிபார்த்து தொடரவும்", otp_resend:"குறியீட்டை மீண்டும் அனுப்பவும்", continue_btn:"தொடரவும்", change_lang:"மொழியை மாற்றவும்" },
+
+    te:{ lang_title:"మీ భాషను ఎంచుకోండి", nav_home:"హోమ్", nav_voice:"వాయిస్", nav_advisor:"సలహాదారు", nav_buyer:"కొనుగోలుదారు", nav_trust:"నమ్మకం", nav_ekta:"గుంపు",
+      greeting:"నమస్కారం, రమేష్ 👋", home_sub:"నేటి సారాంశం — మీ పంట స్థితి మరియు అందుబాటులో ఉన్న అవకాశాలు", crop_label:"మీ పంట", best_label:"ఉత్తమ నికర ఎంపిక",
+      buyer_label:"కొనుగోలుదారు డిమాండ్", buyer_value:"2 సరిపోలే కొనుగోలుదారులు", quick_price:"నేటి ధర", quick_mymaal:"నా పంట", quick_transport:"రవాణా", quick_payment:"చెల్లింపు",
+      voice_title:"కాల్ చేయండి. మాట్లాడండి.", voice_prompt:"మాట్లాడండి, మీకు ఏ సమాచారం కావాలి?", advisor_title:"అమ్మకాల సలహాదారు",
+      advisor_sub:"ఉల్లిపాయ — 20 క్వింటాళ్లు · ధర మాత్రమే కాదు, అంచనా నికర రాబడి", buyer_title:"కొనుగోలుదారు మ్యాచ్", buyer_sub:"మీ పంటకు సరిపోలే ధృవీకరించబడిన కొనుగోలుదారులు",
+      trust_title:"నమ్మక స్కోరు", trust_sub:"గత లావాదేవీలు మరియు చెల్లింపు ప్రవర్తన ఆధారంగా నమ్మక స్కోరు", ekta_title:"సమూహ అమ్మకం",
+      ekta_sub:"చిన్న రైతులు కలిసి పెద్ద కొనుగోలుదారులను చేరుకోవడం", signin_title:"సైన్ ఇన్ చేయండి", signin_sub:"కొనసాగించడానికి మీ మొబైల్ నంబర్ నమోదు చేయండి",
+      phone_ph:"మొబైల్ నంబర్", send_otp:"OTP పంపండి", or_word:"లేదా", voice_alt:"మాట్లాడి సైన్ ఇన్ చేయండి", otp_title:"OTP ధృవీకరించండి",
+      otp_sub:"మీ నంబర్‌కు పంపిన 4 అంకెల కోడ్‌ను నమోదు చేయండి", otp_verify:"ధృవీకరించి కొనసాగించండి", otp_resend:"కోడ్‌ను మళ్లీ పంపండి", continue_btn:"కొనసాగించండి", change_lang:"భాష మార్చండి" },
+
+    kn:{ lang_title:"ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ", nav_home:"ಮುಖಪುಟ", nav_voice:"ಧ್ವನಿ", nav_advisor:"ಸಲಹೆಗಾರ", nav_buyer:"ಖರೀದಿದಾರ", nav_trust:"ನಂಬಿಕೆ", nav_ekta:"ಗುಂಪು",
+      greeting:"ನಮಸ್ಕಾರ, ರಮೇಶ್ 👋", home_sub:"ಇಂದಿನ ಸಾರಾಂಶ — ನಿಮ್ಮ ಬೆಳೆಯ ಸ್ಥಿತಿ ಮತ್ತು ಲಭ್ಯವಿರುವ ಅವಕಾಶಗಳು", crop_label:"ನಿಮ್ಮ ಬೆಳೆ", best_label:"ಉತ್ತಮ ಲಭ್ಯವಿರುವ ನಿವ್ವಳ ಆಯ್ಕೆ",
+      buyer_label:"ಖರೀದಿದಾರರ ಬೇಡಿಕೆ", buyer_value:"2 ಹೊಂದಾಣಿಕೆಯ ಖರೀದಿದಾರರು", quick_price:"ಇಂದಿನ ಬೆಲೆ", quick_mymaal:"ನನ್ನ ಬೆಳೆ", quick_transport:"ಸಾರಿಗೆ", quick_payment:"ಪಾವತಿ",
+      voice_title:"ಕರೆ ಮಾಡಿ. ಮಾತನಾಡಿ.", voice_prompt:"ಮಾತನಾಡಿ, ನಿಮಗೆ ಯಾವ ಮಾಹಿತಿ ಬೇಕು?", advisor_title:"ಮಾರಾಟ ಸಲಹೆಗಾರ",
+      advisor_sub:"ಈರುಳ್ಳಿ — 20 ಕ್ವಿಂಟಲ್ · ಬೆಲೆ ಮಾತ್ರವಲ್ಲ, ಅಂದಾಜು ನಿವ್ವಳ ಲಾಭ", buyer_title:"ಖರೀದಿದಾರ ಹೊಂದಾಣಿಕೆ", buyer_sub:"ನಿಮ್ಮ ಬೆಳೆಗೆ ಹೊಂದುವ ಪರಿಶೀಲಿತ ಖರೀದಿದಾರರು",
+      trust_title:"ನಂಬಿಕೆ ಸ್ಕೋರ್", trust_sub:"ಹಿಂದಿನ ವಹಿವಾಟುಗಳು ಮತ್ತು ಪಾವತಿ ವರ್ತನೆ ಆಧಾರಿತ ನಂಬಿಕೆ ಸ್ಕೋರ್", ekta_title:"ಗುಂಪು ಮಾರಾಟ",
+      ekta_sub:"ಸಣ್ಣ ರೈತರು ಒಟ್ಟಾಗಿ ದೊಡ್ಡ ಖರೀದಿದಾರರನ್ನು ತಲುಪುವುದು", signin_title:"ಸೈನ್ ಇನ್ ಮಾಡಿ", signin_sub:"ಮುಂದುವರಿಸಲು ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ",
+      phone_ph:"ಮೊಬೈಲ್ ಸಂಖ್ಯೆ", send_otp:"OTP ಕಳುಹಿಸಿ", or_word:"ಅಥವಾ", voice_alt:"ಮಾತನಾಡಿ ಸೈನ್ ಇನ್ ಮಾಡಿ", otp_title:"OTP ಪರಿಶೀಲಿಸಿ",
+      otp_sub:"ನಿಮ್ಮ ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಿದ 4 ಅಂಕಿಯ ಕೋಡ್ ನಮೂದಿಸಿ", otp_verify:"ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮುಂದುವರಿಸಿ", otp_resend:"ಕೋಡ್ ಮತ್ತೆ ಕಳುಹಿಸಿ", continue_btn:"ಮುಂದುವರಿಸಿ", change_lang:"ಭಾಷೆ ಬದಲಾಯಿಸಿ" },
+
+    ml:{ lang_title:"നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക", nav_home:"ഹോം", nav_voice:"ശബ്ദം", nav_advisor:"ഉപദേഷ്ടാവ്", nav_buyer:"വാങ്ങുന്നയാൾ", nav_trust:"വിശ്വാസം", nav_ekta:"ഗ്രൂപ്പ്",
+      greeting:"നമസ്കാരം, രമേഷ് 👋", home_sub:"ഇന്നത്തെ സംഗ്രഹം — നിങ്ങളുടെ വിളയുടെ സ്ഥിതിയും ലഭ്യമായ അവസരങ്ങളും", crop_label:"നിങ്ങളുടെ വിള", best_label:"മികച്ച ലഭ്യമായ അറ്റ ഓപ്ഷൻ",
+      buyer_label:"വാങ്ങുന്നയാളുടെ ആവശ്യം", buyer_value:"2 പൊരുത്തപ്പെടുന്ന വാങ്ങുന്നവർ", quick_price:"ഇന്നത്തെ വില", quick_mymaal:"എന്റെ വിള", quick_transport:"ഗതാഗതം", quick_payment:"പേയ്മെന്റ്",
+      voice_title:"വിളിക്കൂ. സംസാരിക്കൂ.", voice_prompt:"സംസാരിക്കൂ, നിങ്ങൾക്ക് എന്ത് വിവരം വേണം?", advisor_title:"വിൽപ്പന ഉപദേഷ്ടാവ്",
+      advisor_sub:"ഉള്ളി — 20 ക്വിന്റൽ · വില മാത്രമല്ല, കണക്കാക്കിയ അറ്റ ലാഭം", buyer_title:"വാങ്ങുന്നയാൾ പൊരുത്തം", buyer_sub:"നിങ്ങളുടെ വിളയുമായി പൊരുത്തപ്പെടുന്ന സ്ഥിരീകരിച്ച വാങ്ങുന്നവർ",
+      trust_title:"വിശ്വാസ സ്കോർ", trust_sub:"മുൻ ഇടപാടുകളും പേയ്മെന്റ് സ്വഭാവവും അടിസ്ഥാനമാക്കിയ വിശ്വാസ സ്കോർ", ekta_title:"കൂട്ടായ വിൽപ്പന",
+      ekta_sub:"ചെറുകിട കർഷകർ ഒരുമിച്ച് വലിയ വാങ്ങുന്നവരിലേക്ക് എത്തുന്നു", signin_title:"സൈൻ ഇൻ ചെയ്യുക", signin_sub:"തുടരാൻ നിങ്ങളുടെ മൊബൈൽ നമ്പർ നൽകുക",
+      phone_ph:"മൊബൈൽ നമ്പർ", send_otp:"OTP അയയ്ക്കുക", or_word:"അല്ലെങ്കിൽ", voice_alt:"സംസാരിച്ച് സൈൻ ഇൻ ചെയ്യുക", otp_title:"OTP സ്ഥിരീകരിക്കുക",
+      otp_sub:"നിങ്ങളുടെ നമ്പറിലേക്ക് അയച്ച 4 അക്ക കോഡ് നൽകുക", otp_verify:"സ്ഥിരീകരിച്ച് തുടരുക", otp_resend:"കോഡ് വീണ്ടും അയയ്ക്കുക", continue_btn:"തുടരുക", change_lang:"ഭാഷ മാറ്റുക" },
+
+    pa:{ lang_title:"ਆਪਣੀ ਭਾਸ਼ਾ ਚੁਣੋ", nav_home:"ਘਰ", nav_voice:"ਆਵਾਜ਼", nav_advisor:"ਸਲਾਹਕਾਰ", nav_buyer:"ਖਰੀਦਦਾਰ", nav_trust:"ਭਰੋਸਾ", nav_ekta:"ਸਮੂਹ",
+      greeting:"ਸਤ ਸ੍ਰੀ ਅਕਾਲ, ਰਮੇਸ਼ 👋", home_sub:"ਅੱਜ ਦਾ ਸਾਰ — ਤੁਹਾਡੀ ਫ਼ਸਲ ਦੀ ਸਥਿਤੀ ਅਤੇ ਉਪਲਬਧ ਮੌਕੇ", crop_label:"ਤੁਹਾਡੀ ਫ਼ਸਲ", best_label:"ਸਭ ਤੋਂ ਵਧੀਆ ਉਪਲਬਧ ਸ਼ੁੱਧ ਵਿਕਲਪ",
+      buyer_label:"ਖਰੀਦਦਾਰ ਦੀ ਮੰਗ", buyer_value:"2 ਮਿਲਦੇ-ਜੁਲਦੇ ਖਰੀਦਦਾਰ", quick_price:"ਅੱਜ ਦਾ ਭਾਅ", quick_mymaal:"ਮੇਰੀ ਫ਼ਸਲ", quick_transport:"ਢੋਆ-ਢੁਆਈ", quick_payment:"ਭੁਗਤਾਨ",
+      voice_title:"ਸਿਰਫ਼ ਕਾਲ ਕਰੋ। ਸਿਰਫ਼ ਬੋਲੋ।", voice_prompt:"ਬੋਲੋ, ਤੁਹਾਨੂੰ ਕੀ ਜਾਣਕਾਰੀ ਚਾਹੀਦੀ ਹੈ?", advisor_title:"ਵਿਕਰੀ ਸਲਾਹਕਾਰ",
+      advisor_sub:"ਪਿਆਜ਼ — 20 ਕੁਇੰਟਲ · ਸਿਰਫ਼ ਭਾਅ ਨਹੀਂ, ਅਨੁਮਾਨਿਤ ਸ਼ੁੱਧ ਮੁਨਾਫ਼ਾ", buyer_title:"ਖਰੀਦਦਾਰ ਮੇਲ", buyer_sub:"ਤੁਹਾਡੀ ਫ਼ਸਲ ਨਾਲ ਮੇਲ ਖਾਂਦੇ ਪ੍ਰਮਾਣਿਤ ਖਰੀਦਦਾਰ",
+      trust_title:"ਭਰੋਸਾ ਸਕੋਰ", trust_sub:"ਪਿਛਲੇ ਲੈਣ-ਦੇਣ ਅਤੇ ਭੁਗਤਾਨ ਵਿਵਹਾਰ 'ਤੇ ਆਧਾਰਿਤ ਭਰੋਸਾ ਸਕੋਰ", ekta_title:"ਸਮੂਹਿਕ ਵਿਕਰੀ",
+      ekta_sub:"ਛੋਟੇ ਕਿਸਾਨ ਇਕੱਠੇ ਹੋ ਕੇ ਵੱਡੇ ਖਰੀਦਦਾਰਾਂ ਤੱਕ ਪਹੁੰਚਦੇ ਹਨ", signin_title:"ਸਾਈਨ ਇਨ ਕਰੋ", signin_sub:"ਜਾਰੀ ਰੱਖਣ ਲਈ ਆਪਣਾ ਮੋਬਾਈਲ ਨੰਬਰ ਦਰਜ ਕਰੋ",
+      phone_ph:"ਮੋਬਾਈਲ ਨੰਬਰ", send_otp:"OTP ਭੇਜੋ", or_word:"ਜਾਂ", voice_alt:"ਬੋਲ ਕੇ ਸਾਈਨ ਇਨ ਕਰੋ", otp_title:"OTP ਤਸਦੀਕ ਕਰੋ",
+      otp_sub:"ਤੁਹਾਡੇ ਨੰਬਰ 'ਤੇ ਭੇਜਿਆ 4 ਅੰਕਾਂ ਦਾ ਕੋਡ ਦਰਜ ਕਰੋ", otp_verify:"ਤਸਦੀਕ ਕਰੋ ਅਤੇ ਜਾਰੀ ਰੱਖੋ", otp_resend:"ਕੋਡ ਦੁਬਾਰਾ ਭੇਜੋ", continue_btn:"ਜਾਰੀ ਰੱਖੋ", change_lang:"ਭਾਸ਼ਾ ਬਦਲੋ" },
+
+    or:{ lang_title:"ଆପଣଙ୍କ ଭାଷା ବାଛନ୍ତୁ", nav_home:"ହୋମ୍", nav_voice:"ସ୍ୱର", nav_advisor:"ପରାମର୍ଶଦାତା", nav_buyer:"କ୍ରେତା", nav_trust:"ବିଶ୍ୱାସ", nav_ekta:"ଦଳ",
+      greeting:"ନମସ୍କାର, ରମେଶ 👋", home_sub:"ଆଜିର ସାରାଂଶ — ଆପଣଙ୍କ ଫସଲର ସ୍ଥିତି ଏବଂ ଉପଲବ୍ଧ ସୁଯୋଗ", crop_label:"ଆପଣଙ୍କ ଫସଲ", best_label:"ସର୍ବୋତ୍ତମ ଉପଲବ୍ଧ ନିଟ୍ ବିକଳ୍ପ",
+      buyer_label:"କ୍ରେତା ଚାହିଦା", buyer_value:"2 ମେଳ ଖାଉଥିବା କ୍ରେତା", quick_price:"ଆଜିର ମୂଲ୍ୟ", quick_mymaal:"ମୋର ଫସଲ", quick_transport:"ପରିବହନ", quick_payment:"ପେମେଣ୍ଟ",
+      voice_title:"କେବଳ କଲ୍ କରନ୍ତୁ। କେବଳ କୁହନ୍ତୁ।", voice_prompt:"କୁହନ୍ତୁ, ଆପଣଙ୍କୁ କ'ଣ ସୂଚନା ଦରକାର?", advisor_title:"ବିକ୍ରୟ ପରାମର୍ଶଦାତା",
+      advisor_sub:"ପିଆଜ — 20 କ୍ୱିଣ୍ଟାଲ୍ · କେବଳ ମୂଲ୍ୟ ନୁହେଁ, ଆକଳନ କରାଯାଇଥିବା ନିଟ୍ ଲାଭ", buyer_title:"କ୍ରେତା ମେଳ", buyer_sub:"ଆପଣଙ୍କ ଫସଲ ସହିତ ମେଳ ଖାଉଥିବା ଯାଞ୍ଚ ହୋଇଥିବା କ୍ରେତା",
+      trust_title:"ବିଶ୍ୱାସ ସ୍କୋର", trust_sub:"ପୂର୍ବ କାରବାର ଏବଂ ପେମେଣ୍ଟ ଆଚରଣ ଉପରେ ଆଧାରିତ ବିଶ୍ୱାସ ସ୍କୋର", ekta_title:"ସାମୂହିକ ବିକ୍ରୟ",
+      ekta_sub:"ଛୋଟ କୃଷକମାନେ ଏକାଠି ହୋଇ ବଡ଼ କ୍ରେତାଙ୍କ ପାଖରେ ପହଞ୍ଚିବା", signin_title:"ସାଇନ୍ ଇନ୍ କରନ୍ତୁ", signin_sub:"ଜାରି ରଖିବାକୁ ଆପଣଙ୍କ ମୋବାଇଲ ନମ୍ବର ଦିଅନ୍ତୁ",
+      phone_ph:"ମୋବାଇଲ ନମ୍ବର", send_otp:"OTP ପଠାନ୍ତୁ", or_word:"କିମ୍ବା", voice_alt:"କହି ସାଇନ୍ ଇନ୍ କରନ୍ତୁ", otp_title:"OTP ଯାଞ୍ଚ କରନ୍ତୁ",
+      otp_sub:"ଆପଣଙ୍କ ନମ୍ବରକୁ ପଠାଯାଇଥିବା 4 ଅଙ୍କ କୋଡ୍ ଦିଅନ୍ତୁ", otp_verify:"ଯାଞ୍ଚ କରି ଜାରି ରଖନ୍ତୁ", otp_resend:"କୋଡ୍ ପୁଣି ପଠାନ୍ତୁ", continue_btn:"ଜାରି ରଖନ୍ତୁ", change_lang:"ଭାଷା ବଦଳାନ୍ତୁ" },
+
+    as:{ lang_title:"আপোনাৰ ভাষা বাছক", nav_home:"ঘৰ", nav_voice:"কণ্ঠস্বৰ", nav_advisor:"পৰামৰ্শদাতা", nav_buyer:"ক্ৰেতা", nav_trust:"বিশ্বাস", nav_ekta:"দল",
+      greeting:"নমস্কাৰ, ৰমেশ 👋", home_sub:"আজিৰ সাৰাংশ — আপোনাৰ শস্যৰ অৱস্থা আৰু উপলব্ধ সুযোগ", crop_label:"আপোনাৰ শস্য", best_label:"শ্ৰেষ্ঠ উপলব্ধ নিট বিকল্প",
+      buyer_label:"ক্ৰেতাৰ চাহিদা", buyer_value:"2 মিল থকা ক্ৰেতা", quick_price:"আজিৰ দৰ", quick_mymaal:"মোৰ শস্য", quick_transport:"পৰিবহন", quick_payment:"পৰিশোধ",
+      voice_title:"মাত্ৰ কল কৰক। মাত্ৰ কওক।", voice_prompt:"কওক, আপোনাক কি তথ্য লাগে?", advisor_title:"বিক্ৰী পৰামৰ্শদাতা",
+      advisor_sub:"পিয়াঁজ — 20 কুইণ্টাল · কেৱল দৰ নহয়, আনুমানিক নিট লাভ", buyer_title:"ক্ৰেতা মিল", buyer_sub:"আপোনাৰ শস্যৰ সৈতে মিল থকা প্ৰমাণিত ক্ৰেতা",
+      trust_title:"বিশ্বাস স্ক'ৰ", trust_sub:"পূৰ্বৰ লেনদেন আৰু পৰিশোধ আচৰণৰ ওপৰত ভিত্তি କରি বিশ্বাস স্ক'ৰ", ekta_title:"সামূহিক বিক্ৰী",
+      ekta_sub:"সৰু কৃষকসকল একগোট হৈ ডাঙৰ ক্ৰেতাৰ ওচৰ পাবলৈ", signin_title:"ছাইন ইন কৰক", signin_sub:"অব্যাহত ৰাখিবলৈ আপোনাৰ মোবাইল নম্বৰ দিয়ক",
+      phone_ph:"মোবাইল নম্বৰ", send_otp:"OTP পঠিয়াওক", or_word:"অথবা", voice_alt:"কৈ ছাইন ইন কৰক", otp_title:"OTP সত্যাপন কৰক",
+      otp_sub:"আপোনাৰ নম্বৰলৈ পঠোৱা 4 সংখ্যাৰ ক'ড দিয়ক", otp_verify:"সত্যাপন কৰি অব্যাহত ৰাখক", otp_resend:"ক'ড পুনৰ পঠিয়াওক", continue_btn:"অব্যাহত ৰাখক", change_lang:"ভাষা সলনি কৰক" },
+
+    ur:{ lang_title:"اپنی زبان منتخب کریں", nav_home:"ہوم", nav_voice:"آواز", nav_advisor:"مشیر", nav_buyer:"خریدار", nav_trust:"بھروسہ", nav_ekta:"گروہ",
+      greeting:"السلام علیکم، رمیش 👋", home_sub:"آج کا خلاصہ — آپ کی فصل کی صورتحال اور دستیاب مواقع", crop_label:"آپ کی فصل", best_label:"بہترین دستیاب خالص آپشن",
+      buyer_label:"خریدار کی طلب", buyer_value:"2 ملتے جلتے خریدار", quick_price:"آج کی قیمت", quick_mymaal:"میری فصل", quick_transport:"نقل و حمل", quick_payment:"ادائیگی",
+      voice_title:"بس کال کریں۔ بس بولیں۔", voice_prompt:"بولیں، آپ کو کیا معلومات چاہیے؟", advisor_title:"فروخت مشیر",
+      advisor_sub:"پیاز — 20 کوئنٹل · صرف قیمت نہیں، تخمینی خالص منافع", buyer_title:"خریدار میچ", buyer_sub:"آپ کی فصل سے میل کھاتے تصدیق شدہ خریدار",
+      trust_title:"بھروسہ اسکور", trust_sub:"پچھلے لین دین اور ادائیگی کے رویے پر مبنی بھروسہ اسکور", ekta_title:"اجتماعی فروخت",
+      ekta_sub:"چھوٹے کسان مل کر بڑے خریداروں تک پہنچتے ہیں", signin_title:"سائن ان کریں", signin_sub:"جاری رکھنے کے لیے اپنا موبائل نمبر درج کریں",
+      phone_ph:"موبائل نمبر", send_otp:"OTP بھیجیں", or_word:"یا", voice_alt:"بول کر سائن ان کریں", otp_title:"OTP کی تصدیق کریں",
+      otp_sub:"آپ کے نمبر پر بھیجا گیا 4 ہندسوں کا کوڈ درج کریں", otp_verify:"تصدیق کریں اور جاری رکھیں", otp_resend:"کوڈ دوبارہ بھیجیں", continue_btn:"جاری رکھیں", change_lang:"زبان تبدیل کریں" }
+  };
+
+  let currentLang = 'mr';
+  let loggedIn = false;
+  let voiceIntroPlayed = false;
+  const mainTabs = ['home','voice','advisor','buyer','trust','ekta'];
+
+  function selectLang(code){
+    currentLang = code;
+    document.querySelectorAll('.lang-chip').forEach(c => c.classList.toggle('selected', c.dataset.code === code));
+    applyTranslations();
+  }
+
+  function applyTranslations(){
+    const dict = translations[currentLang] || translations.en;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if(dict[key] !== undefined) el.textContent = dict[key];
+    });
+    document.body.classList.toggle('rtl', currentLang === 'ur');
+  }
+
+  function onLangContinue(){
+    applyTranslations();
+    showScreen(loggedIn ? 'home' : 'signin');
+  }
+
+  function onSendOtp(){
+    const val = document.getElementById('phoneInput').value.trim();
+    document.getElementById('otpPhoneDisplay').textContent = val || 'XXXXXXXXXX';
+    showScreen('otp');
+    setTimeout(() => { const first = document.querySelector('.otp-box'); if(first) first.focus(); }, 300);
+  }
+
+  function otpAdvance(el){
+    if(el.value.length === 1){
+      const next = el.nextElementSibling;
+      if(next && next.classList.contains('otp-box')) next.focus();
+    }
+  }
+
+  function resendOtp(){
+    document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+    const first = document.querySelector('.otp-box'); if(first) first.focus();
+  }
+
+  function onVerifyOtp(){
+    loggedIn = true;
+    showScreen('home');
+  }
+
+  function cycleConn(){
+    const connStates = [
+      {cls:'', icon:'📶', text:'नेटवर्क उपलब्ध'},
+      {cls:'mode-call', icon:'📞', text:'कमी नेटवर्क — कॉल मोड'},
+      {cls:'mode-sms', icon:'📩', text:'फक्त SMS उपलब्ध'}
+    ];
+    if(typeof cycleConn.idx === 'undefined') cycleConn.idx = 0;
+    cycleConn.idx = (cycleConn.idx + 1) % connStates.length;
+    const s = connStates[cycleConn.idx];
+    const el = document.getElementById('connPill');
+    el.className = 'conn-pill mr ' + s.cls;
+    el.textContent = s.icon + ' ' + s.text;
+  }
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+    const isMain = mainTabs.includes(id);
+    document.querySelector('.bottomnav').style.display = isMain ? 'flex' : 'none';
+    document.querySelector('.fab-mic').style.display = (id === 'home') ? 'flex' : 'none';
+    document.getElementById('fabLabel').style.display = (id === 'home') ? 'block' : 'none';
+    if(isMain){ document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === id)); }
+    if(id === 'ekta') animateStack();
+    if(id === 'trust') animateDial();
+    if(id === 'voice' && !voiceIntroPlayed){ voiceIntroPlayed = true; setTimeout(playConversation, 400); }
+  }
+
+  const convo = [
+    {who:'farmer', text:'माझ्याकडे २० पोती कांदा आहे. कुठे विकू?'},
+    {who:'ai', text:'तुमच्या जवळच्या बाजारात ₹२,४५० भाव आहे. पुण्यातील ABC Foods ₹२,७०० देत आहे. वाहतूक खर्च वजा केल्यानंतरही पुण्याचा पर्याय चांगला दिसतो.'},
+    {who:'farmer', text:'हा खरेदीदार विश्वासू आहे का?'},
+    {who:'ai', text:'हो. Trust Score ९१ आहे. मागील १२४ व्यवहारांपैकी ९६% पेमेंट वेळेवर झाले आहेत.'}
+  ];
+  let convoRunning = false;
+  function playConversation(){
+    if(convoRunning) return;
+    convoRunning = true;
+    const log = document.getElementById('chatlog');
+    log.innerHTML = '';
+    const ring = document.getElementById('micRing');
+    ring.classList.add('listening');
+    convo.forEach((m, i) => {
+      setTimeout(() => {
+        const b = document.createElement('div');
+        b.className = 'bubble ' + m.who;
+        b.textContent = m.text;
+        log.appendChild(b);
+        log.scrollTop = log.scrollHeight;
+        if(i === convo.length - 1){ ring.classList.remove('listening'); convoRunning = false; }
+      }, i * 1100);
+    });
+  }
+
+  function animateDial(){
+    const arc = document.getElementById('dialArc');
+    const circumference = 364;
+    const target = circumference - (circumference * 0.91);
+    arc.style.transition = 'none';
+    arc.setAttribute('stroke-dashoffset', circumference);
+    requestAnimationFrame(() => {
+      arc.style.transition = 'stroke-dashoffset 1.1s ease';
+      arc.setAttribute('stroke-dashoffset', target);
+    });
+  }
+
+  const segments = [{id:'seg1', q:20}, {id:'seg2', q:35}, {id:'seg3', q:40}, {id:'seg4', q:55}, {id:'seg5', q:50}];
+  const totalTarget = segments.reduce((a,b) => a + b.q, 0);
+  function animateStack(){
+    segments.forEach(s => {
+      const el = document.getElementById(s.id);
+      el.style.width = '0%';
+      requestAnimationFrame(() => { el.style.width = (s.q / totalTarget * 100) + '%'; });
+    });
+    let cur = 0;
+    const totalEl = document.getElementById('totalQ');
+    const step = Math.max(1, Math.round(totalTarget / 30));
+    const timer = setInterval(() => {
+      cur += step;
+      if(cur >= totalTarget){ cur = totalTarget; clearInterval(timer); }
+      totalEl.textContent = toDevanagari(cur) + ' क्विंटल';
+    }, 30);
+  }
+  function toDevanagari(n){
+    const map = ['०','१','२','३','४','५','६','७','८','९'];
+    return String(n).split('').map(d => map[+d] !== undefined ? map[+d] : d).join('');
+  }
+
+  function openConfirm(){
+    const sheet = document.getElementById('modalSheet');
+    sheet.innerHTML = '<p>तुम्हाला २० क्विंटल कांदा ABC Foods ला ₹२,७०० प्रति क्विंटल दराने विकायचा आहे. बरोबर?</p>' +
+      '<div class="modal-btns"><button class="btn-ghost" onclick="closeModal()">नाही</button>' +
+      '<button class="btn-primary" style="margin-top:0;" onclick="confirmDeal()">हो</button></div>';
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+  function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+  function confirmDeal(){
+    const sheet = document.getElementById('modalSheet');
+    sheet.innerHTML = '<div class="lockbanner"><div class="licon">🔒</div><div class="ltext">डील निश्चित</div>' +
+      '<div class="lsub">२० क्विंटल → गट विक्री १०० क्विंटल → ABC Foods शी जुळणी झाली</div></div>' +
+      '<button class="btn-primary" onclick="closeModal()">ठीक आहे</button>';
+  }
+
+  applyTranslations();
+  showScreen('lang');
+</script>
+</body>
+</html>
