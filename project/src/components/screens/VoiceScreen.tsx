@@ -7,44 +7,13 @@ import { Waveform } from '../ui/Waveform';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { LANGUAGES } from '../../data/languages';
 import { VOICE_SUGGESTIONS } from '../../data/voiceScripts';
-import { SPEECH_LANG_MAP } from '../../data/voiceIntents';
 import { askAgriculturalAI, exchangesToMessages, AIServiceError } from '../../services/aiService';
+import { detectLanguageFromText } from '../../services/languageService';
+import { SpeechRecorder, SpeechServiceError } from '../../services/speechService';
+import { speakText, stopSpeech } from '../../services/ttsService';
 import type { LanguageCode, ConnectivityMode, VoiceExchange } from '../../types';
 
-type VoiceState = 'idle' | 'listening' | 'processing' | 'responding';
-
-// Minimal type declarations for the Web Speech API (not in standard TS lib)
-interface SpeechRecognitionResultLike {
-  transcript: string;
-  confidence: number;
-}
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: { length: number; [index: number]: { 0: SpeechRecognitionResultLike; isFinal: boolean } };
-}
-interface SpeechRecognitionLike {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  onstart: (() => void) | null;
-}
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
-
-function getSpeechRecognition(): SpeechRecognitionCtor | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as {
-    SpeechRecognition?: SpeechRecognitionCtor;
-    webkitSpeechRecognition?: SpeechRecognitionCtor;
-  };
-  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
-}
+type VoiceState = 'idle' | 'listening' | 'transcribing' | 'thinking' | 'speaking';
 
 export function VoiceScreen() {
   const { t, language, setLanguage, connectivity, setConnectivity } = useApp();
@@ -54,48 +23,45 @@ export function VoiceScreen() {
   const [showConnPicker, setShowConnPicker] = useState(false);
   const [interimText, setInterimText] = useState('');
   const [textInput, setTextInput] = useState('');
-  const [speechSupported, setSpeechSupported] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [responseLanguage, setResponseLanguage] = useState<LanguageCode>(language);
 
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const speechSynthRef = useRef<SpeechSynthesis | null>(null);
+  const recorderRef = useRef<SpeechRecorder | null>(null);
 
   useEffect(() => {
-    const SR = getSpeechRecognition();
-    setSpeechSupported(!!SR);
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      speechSynthRef.current = window.speechSynthesis;
-    }
+    setSpeechSupported(
+      typeof window !== 'undefined' &&
+      !!navigator.mediaDevices?.getUserMedia &&
+      typeof MediaRecorder !== 'undefined'
+    );
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-        recognitionRef.current = null;
-      }
-      if (speechSynthRef.current) {
-        speechSynthRef.current.cancel();
-      }
+      recorderRef.current?.cancel();
+      stopSpeech();
     };
   }, []);
 
-  const speakResponse = useCallback((text: string, lang: LanguageCode) => {
-    if (!speechSynthRef.current) return;
-    speechSynthRef.current.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const bcp47 = SPEECH_LANG_MAP[lang] || 'en-IN';
-    utterance.lang = bcp47;
-    utterance.rate = 0.95;
-    utterance.onend = () => setVoiceState('idle');
-    speechSynthRef.current.speak(utterance);
+  const speakResponse = useCallback(async (text: string, lang: LanguageCode) => {
+    setVoiceState('speaking');
+    try {
+      await speakText(text, lang);
+    } catch {
+      setErrorMsg('Voice response could not be played. You can still read the answer below.');
+    } finally {
+      setVoiceState('idle');
+    }
   }, []);
 
-  const handleRecognizedText = useCallback(async (recognizedText: string) => {
+  const handleRecognizedText = useCallback(async (recognizedText: string, languageHint?: LanguageCode) => {
     if (!recognizedText.trim()) {
       setVoiceState('idle');
       return;
     }
 
-    setVoiceState('processing');
+    setVoiceState('thinking');
     setErrorMsg('');
+    const detectedLanguage = languageHint || detectLanguageFromText(recognizedText, language);
+    setResponseLanguage(detectedLanguage);
     const userExchange: VoiceExchange = {
       id: `u-${Date.now()}`,
       role: 'user',
@@ -110,7 +76,7 @@ export function VoiceScreen() {
     try {
       const response = await askAgriculturalAI(
         exchangesToMessages(nextExchanges),
-        language
+        detectedLanguage
       );
       setExchanges(prev => [...prev, {
         id: `a-${Date.now()}`,
@@ -118,95 +84,56 @@ export function VoiceScreen() {
         text: response,
         timestamp: Date.now(),
       }]);
-      setVoiceState('responding');
-      speakResponse(response, language);
+      void speakResponse(response, detectedLanguage);
     } catch (error) {
       const message = error instanceof AIServiceError
         ? error.message
-        : 'The AI assistant could not respond. Check your connection and try again.';
+        : 'AI assistant is currently unavailable. Please check the AI configuration.';
       setErrorMsg(message);
       setVoiceState('idle');
     }
   }, [exchanges, language, speakResponse]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     setErrorMsg('');
     setInterimText('');
-    const SR = getSpeechRecognition();
-    if (!SR) {
-      setSpeechSupported(false);
+    if (voiceState !== 'idle') {
       return;
     }
 
-    // Clean up any previous instance
-    if (recognitionRef.current) {
-      recognitionRef.current.abort();
-    }
-
-    const recognition = new SR();
-    const bcp47 = SPEECH_LANG_MAP[language] || 'en-IN';
-    recognition.lang = bcp47;
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setVoiceState('listening');
-    };
-
-    recognition.onresult = (e: SpeechRecognitionEventLike) => {
-      let finalText = '';
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const result = e.results[i];
-        if (result.isFinal) {
-          finalText += result[0].transcript;
-        } else {
-          interim += result[0].transcript;
-        }
-      }
-      if (interim) setInterimText(interim);
-      if (finalText) {
-        setInterimText('');
-        recognition.stop();
-        handleRecognizedText(finalText);
-      }
-    };
-
-    recognition.onerror = (e: { error: string }) => {
-      if (e.error === 'no-speech') {
-        setErrorMsg('No speech detected. Please try again.');
-      } else if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        setErrorMsg('Microphone access denied. Please allow microphone permissions.');
-        setSpeechSupported(false);
-      } else {
-        setErrorMsg(`Voice error: ${e.error}`);
-      }
-      setVoiceState('idle');
-    };
-
-    recognition.onend = () => {
-      // If still in listening state (no result came through), go idle
-      setVoiceState(prev => prev === 'listening' ? 'idle' : prev);
-    };
-
-    recognitionRef.current = recognition;
-
+    const recorder = new SpeechRecorder();
+    recorderRef.current = recorder;
     try {
-      recognition.start();
-    } catch {
-      // start() can throw if called too quickly after abort
-      setErrorMsg('Could not start microphone. Please try again.');
+      await recorder.start();
+      setVoiceState('listening');
+      setInterimText('Recording audio…');
+    } catch (error) {
+      const message = error instanceof SpeechServiceError
+        ? error.message
+        : 'Microphone permission is required for voice questions.';
+      setErrorMsg(message);
       setVoiceState('idle');
     }
-  }, [language, handleRecognizedText]);
+  }, [voiceState]);
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
+  const stopListening = useCallback(async () => {
+    const recorder = recorderRef.current;
+    if (!recorder || voiceState !== 'listening') return;
+    setVoiceState('transcribing');
+    setInterimText('');
+    try {
+      const transcription = await recorder.stop();
+      const detectedLanguage = transcription.language || detectLanguageFromText(transcription.text, language);
+      setResponseLanguage(detectedLanguage);
+      await handleRecognizedText(transcription.text, transcription.language);
+    } catch (error) {
+      const message = error instanceof SpeechServiceError
+        ? error.message
+        : 'I couldn’t understand the audio. Please try again.';
+      setErrorMsg(message);
+      setVoiceState('idle');
     }
-    setVoiceState('idle');
-  }, []);
+  }, [handleRecognizedText, language, voiceState]);
 
   const handleTextInput = useCallback(() => {
     const text = textInput.trim();
@@ -217,11 +144,8 @@ export function VoiceScreen() {
 
   // Stop speech when language changes
   useEffect(() => {
-    if (speechSynthRef.current) {
-      speechSynthRef.current.cancel();
-    }
-    setExchanges([]);
-    setVoiceState('idle');
+    stopSpeech();
+    setResponseLanguage(language);
   }, [language]);
 
   const connModes: { mode: ConnectivityMode; icon: typeof Wifi; label: string; desc: string }[] = [
@@ -233,8 +157,6 @@ export function VoiceScreen() {
   const activeConn = connModes.find(c => c.mode === connectivity) || connModes[0];
   const activeLang = LANGUAGES.find(l => l.code === language);
   const suggestions = VOICE_SUGGESTIONS[language] || VOICE_SUGGESTIONS.en;
-  const voiceLangSupported = !!SPEECH_LANG_MAP[language];
-
   return (
     <div className="px-4 pt-4 pb-2 sm:px-0 sm:pt-2 sm:pb-4">
       <ScreenHeader
@@ -270,23 +192,23 @@ export function VoiceScreen() {
 
       {/* Voice interaction area */}
       <Card className="mb-4 flex flex-col items-center py-8">
-        {speechSupported && voiceLangSupported ? (
+        {speechSupported ? (
           <>
             {/* Mic button */}
             <button
               onClick={voiceState === 'listening' ? stopListening : startListening}
-              disabled={voiceState === 'processing' || voiceState === 'responding'}
+              disabled={voiceState === 'transcribing' || voiceState === 'thinking' || voiceState === 'speaking'}
               className="relative mb-4"
             >
               <div className={`w-24 h-24 rounded-full flex items-center justify-center transition-all ${
                 voiceState === 'listening' ? 'bg-market animate-pulse-ring' :
-                voiceState === 'processing' ? 'bg-trust' :
-                voiceState === 'responding' ? 'bg-brand-deep' :
+                voiceState === 'transcribing' || voiceState === 'thinking' ? 'bg-trust' :
+                voiceState === 'speaking' ? 'bg-brand-deep' :
                 'bg-brand-deep hover:bg-brand-mid'
               }`}>
-                {voiceState === 'responding' ? (
+                {voiceState === 'speaking' ? (
                   <Volume2 size={36} className="text-white" />
-                ) : voiceState === 'processing' ? (
+                ) : voiceState === 'transcribing' || voiceState === 'thinking' ? (
                   <Sparkles size={36} className="text-white animate-pulse" />
                 ) : (
                   <Mic size={36} className="text-white" />
@@ -296,9 +218,10 @@ export function VoiceScreen() {
 
             {/* State text */}
             <p className="text-base font-bold text-ink text-center mb-2">
-              {voiceState === 'listening' ? t('listening') :
-               voiceState === 'processing' ? t('processing') :
-               voiceState === 'responding' ? t('playResponse') :
+               {voiceState === 'listening' ? t('listening') :
+                voiceState === 'transcribing' ? t('transcribing') :
+                voiceState === 'thinking' ? t('thinking') :
+                voiceState === 'speaking' ? t('speaking') :
                t('tapToSpeak')}
             </p>
 
@@ -311,7 +234,7 @@ export function VoiceScreen() {
 
             {/* Waveform */}
             <div className="w-32 mb-2">
-              <Waveform active={voiceState === 'listening' || voiceState === 'responding'} bars={7} />
+              <Waveform active={voiceState === 'listening' || voiceState === 'speaking'} bars={7} />
             </div>
           </>
         ) : (
@@ -320,12 +243,10 @@ export function VoiceScreen() {
               <AlertCircle size={32} className="text-ink-faint" />
             </div>
             <p className="text-sm font-bold text-ink text-center mb-1">
-              {speechSupported ? 'Voice input not available for this language' : 'Voice input is unavailable on this browser'}
+              Voice input is unavailable on this browser
             </p>
             <p className="text-xs text-ink-soft text-center max-w-xs mb-2">
-              {speechSupported
-                ? 'You can type your question below, or switch to Marathi, Hindi, Telugu, or English for voice input.'
-                : 'You can type your question below instead.'}
+              You can type your question below instead.
             </p>
           </>
         )}
@@ -358,14 +279,14 @@ export function VoiceScreen() {
               </div>
             </div>
           ))}
-          {voiceState === 'responding' && (
+          {voiceState === 'speaking' && (
             <div className="flex justify-center">
               <Button
                 size="sm"
                 variant="primary"
                 onClick={() => {
                   const lastAssistant = [...exchanges].reverse().find(e => e.role === 'assistant');
-                  if (lastAssistant) speakResponse(lastAssistant.text, language);
+                  if (lastAssistant) void speakResponse(lastAssistant.text, responseLanguage);
                 }}
                 className="shadow-sm"
               >
@@ -392,7 +313,7 @@ export function VoiceScreen() {
             size="md"
             variant="primary"
             onClick={handleTextInput}
-            disabled={!textInput.trim() || voiceState === 'processing'}
+            disabled={!textInput.trim() || voiceState !== 'idle'}
           >
             <Send size={16} />
           </Button>
@@ -434,10 +355,9 @@ export function VoiceScreen() {
           <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={() => setShowLangPicker(false)} />
           <div className="relative w-full max-w-md bg-surface-card rounded-t-3xl sm:rounded-3xl p-5 max-h-[80vh] overflow-y-auto scrollbar-hide animate-slide-up">
             <h3 className="text-lg font-bold text-ink mb-1">{t('selectLanguage')}</h3>
-            <p className="text-xs text-ink-soft mb-3">Voice input available: Marathi, Hindi, Telugu, English</p>
+            <p className="text-xs text-ink-soft mb-3">Language is detected automatically from each question.</p>
             <div className="grid grid-cols-2 gap-2">
               {LANGUAGES.map(lang => {
-                const hasVoice = !!SPEECH_LANG_MAP[lang.code];
                 return (
                   <button
                     key={lang.code}
@@ -453,7 +373,6 @@ export function VoiceScreen() {
                   >
                     <span className="text-base font-bold text-ink">{lang.nativeName}</span>
                     <span className="text-xs text-ink-soft">{lang.name}</span>
-                    {!hasVoice && <span className="text-[9px] text-ink-faint mt-0.5">Text only</span>}
                   </button>
                 );
               })}

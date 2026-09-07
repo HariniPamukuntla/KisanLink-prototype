@@ -14,13 +14,15 @@ The configured Replit workflow runs the same command and serves the preview on p
 
 ## AI assistant configuration
 
-The KisanVoice screen now sends the full in-session conversation to a configurable service through `VITE_AI_API_URL`. The endpoint should accept a `POST` JSON body containing `language`, `messages`, and `systemPrompt`, and return a response in one of these shapes:
+The KisanVoice screen records audio, sends it to a configurable multilingual STT service through `VITE_STT_API_URL`, detects the language, and sends the full in-session conversation to a configurable LLM service through `VITE_AI_API_URL`. The STT endpoint should accept multipart form data with `audio` and `language=auto`, and return `{ "text": "...", "language": "hi" }` or `{ "transcript": "..." }`.
+
+The AI endpoint should accept a `POST` JSON body containing `language`, `messages`, and `systemPrompt`, and return a response in one of these shapes:
 
 - `{ "response": "..." }`
 - `{ "message": { "content": "..." } }`
 - an OpenAI-compatible `{ "choices": [{ "message": { "content": "..." } }] }`
 
-If the endpoint is not configured, the UI shows a configuration message instead of using the old predefined responses. `VITE_AI_API_KEY` is supported for a prototype endpoint, but production deployments should keep provider keys on a server-side proxy rather than exposing them in browser code.
+If either endpoint is not configured, the UI shows a clear configuration message instead of using the old predefined responses. Provider keys are intentionally not read by the React app; production deployments should keep them on a server-side proxy. Set `VITE_TTS_API_URL` only when using a provider-backed audio response; otherwise the browser's multilingual speech synthesis is used through `ttsService.ts`.
 
 ## Authentication and crop quality
 

@@ -20,41 +20,46 @@ export class AIServiceError extends Error {
 
 function getAIEndpoint() {
   const endpoint = import.meta.env.VITE_AI_API_URL?.trim();
-  const apiKey = import.meta.env.VITE_AI_API_KEY?.trim();
 
   if (!endpoint) {
     throw new AIServiceError(
-      'AI assistant is not configured yet. Add VITE_AI_API_URL (and the provider key on your server) to connect a language model.',
+      'AI assistant is currently unavailable. Please check the AI configuration.',
       'not-configured'
     );
   }
 
-  return { endpoint, apiKey };
+  return endpoint;
 }
 
 export async function askAgriculturalAI(
   messages: AIMessage[],
   language: LanguageCode
 ): Promise<string> {
-  const { endpoint, apiKey } = getAIEndpoint();
+  const endpoint = getAIEndpoint();
+  const context = messages.slice(-12);
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    },
-    body: JSON.stringify({
-      language,
-      messages,
-      systemPrompt:
-        'You are KisanLink, a practical and careful agricultural assistant for Indian farmers. Answer in the requested language when possible. Give actionable farming, storage, market, and buyer guidance. Do not invent live prices, government scheme eligibility, or disease diagnoses; clearly label estimates and recommend checking local official sources when needed.',
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language,
+        messages: context,
+        systemPrompt:
+          'You are KisanLink Agricultural AI Assistant. Help Indian farmers with agricultural questions, crops, markets, storage, buyers, government schemes, crop quality, and general farming. Understand informal and mixed-language speech. Reply in the farmer’s language or natural mixed style whenever possible. Never invent today’s prices, scheme eligibility, or live facts. If no real-time data source is connected, say that live market data is not currently connected instead of guessing.',
+      }),
+    });
+  } catch {
+    throw new AIServiceError(
+      'AI assistant is currently unavailable. Please check the AI configuration.',
+      'request-failed'
+    );
+  }
 
   if (!response.ok) {
     throw new AIServiceError(
-      `The AI assistant could not respond (HTTP ${response.status}). Check the configured AI service and try again.`,
+      'AI assistant is currently unavailable. Please check the AI configuration.',
       'request-failed'
     );
   }
@@ -64,7 +69,7 @@ export async function askAgriculturalAI(
     payload = await response.json();
   } catch {
     throw new AIServiceError(
-      'The AI service returned an unreadable response. Check the service endpoint configuration.',
+      'AI assistant is currently unavailable. Please check the AI configuration.',
       'invalid-response'
     );
   }
@@ -81,7 +86,7 @@ export async function askAgriculturalAI(
 
   if (typeof content !== 'string' || !content.trim()) {
     throw new AIServiceError(
-      'The AI service returned no answer. Check that its response uses response, message.content, or choices[0].message.content.',
+      'AI assistant is currently unavailable. Please check the AI configuration.',
       'invalid-response'
     );
   }
@@ -90,7 +95,7 @@ export async function askAgriculturalAI(
 }
 
 export function exchangesToMessages(exchanges: VoiceExchange[]): AIMessage[] {
-  return exchanges.map(exchange => ({
+  return exchanges.slice(-12).map(exchange => ({
     role: exchange.role,
     content: exchange.text,
   }));

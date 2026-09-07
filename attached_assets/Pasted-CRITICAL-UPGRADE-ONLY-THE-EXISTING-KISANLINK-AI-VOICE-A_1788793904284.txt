@@ -1,0 +1,392 @@
+CRITICAL: UPGRADE ONLY THE EXISTING KISANLINK AI VOICE ASSISTANT.
+
+DO NOT redesign the KisanLink dashboard, sidebar, cards, colors, navigation, market UI, login page, or any other existing UI.
+
+The current AI voice assistant is NOT good enough. It currently behaves like a fixed/demo chatbot. Replace the underlying voice-AI implementation with a REAL multilingual conversational AI pipeline.
+
+I want the voice assistant to behave like a high-quality general AI assistant, not like a predefined FAQ bot.
+
+==================================================
+1. REAL VOICE CONVERSATION PIPELINE
+==================================================
+
+Implement this architecture:
+
+MICROPHONE
+    ↓
+REAL SPEECH-TO-TEXT
+    ↓
+LANGUAGE DETECTION
+    ↓
+LLM / AI REASONING
+    ↓
+TEXT RESPONSE
+    ↓
+TEXT-TO-SPEECH
+    ↓
+VOICE RESPONSE
+
+Do NOT use predefined responses.
+
+Do NOT create a large list of if/else responses.
+
+Do NOT map keywords to fixed answers.
+
+Do NOT fake AI behavior.
+
+The assistant must send the user's actual transcribed message to an actual AI model.
+
+==================================================
+2. MULTILINGUAL VOICE INPUT
+==================================================
+
+The farmer may speak in:
+
+- English
+- Hindi
+- Marathi
+- Telugu
+- Tamil
+- Kannada
+- Bengali
+- Gujarati
+- Punjabi
+- Urdu
+- Hinglish
+- Marathi + Hindi mixed speech
+- English + Indian-language mixed speech
+- informal farmer speech
+- imperfect grammar
+- colloquial speech
+
+The assistant should automatically detect the language from the user's speech/text.
+
+The user should NOT have to manually select the language every time.
+
+If the farmer says:
+
+"bhai aaj tamatar ka bhav kya hai"
+
+understand it naturally.
+
+If they say:
+
+"आज कांद्याचा भाव किती आहे?"
+
+understand it naturally.
+
+If they say:
+
+"anna tomato price entha undi?"
+
+understand it naturally.
+
+If they mix languages in one sentence, understand the intent instead of rejecting it.
+
+==================================================
+3. DO NOT RELY ON BROWSER SPEECH RECOGNITION AS THE MAIN SYSTEM
+==================================================
+
+Do NOT make the browser's basic SpeechRecognition/Web Speech API the core speech-to-text system.
+
+Browser speech recognition can be unreliable and language support varies.
+
+Create a proper speech service abstraction.
+
+For example:
+
+src/services/speechService.ts
+
+The architecture should support a real multilingual speech-to-text provider such as:
+
+- Whisper-compatible API
+- Groq Whisper
+- OpenAI speech-to-text
+- another equivalent STT provider
+
+Use an environment variable for the provider/API key.
+
+Example concept:
+
+VITE_STT_API_KEY
+or preferably a secure backend/server environment variable.
+
+NEVER expose private API keys directly in committed frontend source code.
+
+==================================================
+4. REAL LLM CONVERSATION
+==================================================
+
+Create/use a clean AI service such as:
+
+src/services/aiService.ts
+
+The AI service must send the actual user message to a real LLM.
+
+The provider should be configurable so it can later be changed between:
+
+- Groq
+- OpenAI
+- Gemini
+- another compatible provider
+
+Do not hardcode answers.
+
+The system prompt should establish that the assistant is:
+
+"KisanLink Agricultural AI Assistant"
+
+It should be helpful to farmers and understand agricultural questions, markets, crops, storage, buyers, government schemes, crop quality, and general farming questions.
+
+However, it must NOT pretend to know real-time information if no real-time data source is connected.
+
+For example, if asked for today's tomato price and no live market API is connected, it must clearly say that live market data is not currently connected instead of inventing a price.
+
+==================================================
+5. CONVERSATIONAL MEMORY
+==================================================
+
+The assistant must maintain conversation context during the current session.
+
+Example:
+
+Farmer:
+"My farm is in Nashik."
+
+Assistant:
+"Okay."
+
+Farmer:
+"I grow onions."
+
+Assistant:
+"Understood."
+
+Farmer:
+"When should I sell them?"
+
+The assistant should understand that "them" refers to onions.
+
+Maintain a conversation history array and send the relevant conversation history to the LLM.
+
+Do not reset the context after every message.
+
+Add reasonable limits so the conversation history does not grow infinitely.
+
+==================================================
+6. VOICE OUTPUT
+==================================================
+
+After generating the AI response, convert the response to speech.
+
+Create a speech output service abstraction such as:
+
+src/services/ttsService.ts
+
+The system should support multilingual text-to-speech.
+
+The assistant should answer in the language the farmer used whenever possible.
+
+Examples:
+
+Marathi question → Marathi response + Marathi speech.
+
+Hindi question → Hindi response + Hindi speech.
+
+English question → English response + English speech.
+
+Mixed-language question → natural response matching the user's language style where practical.
+
+Do not always translate everything into English.
+
+==================================================
+7. NATURAL SPEECH HANDLING
+==================================================
+
+The assistant must tolerate:
+
+- pauses
+- filler words
+- imperfect pronunciation
+- repeated words
+- background conversational noise where possible
+- informal language
+- speech recognition mistakes
+
+Do not require exact predefined phrases.
+
+For example, these should all be interpreted as essentially the same intent:
+
+"what is tomato price"
+
+"tomato ka bhav kya hai"
+
+"aaj tamatar kitne mein jaa raha hai"
+
+"tomato rate today?"
+
+"bhai tamatar ka market bhav bata"
+
+==================================================
+8. TEXT INPUT MUST USE THE SAME AI ENGINE
+==================================================
+
+The existing typed chat input must NOT use a separate fake response system.
+
+Both:
+
+VOICE INPUT
+and
+TEXT INPUT
+
+must ultimately call the same AI service.
+
+Architecture:
+
+Voice
+→ STT
+→ aiService
+→ response
+→ TTS
+
+Text
+→ aiService
+→ response
+
+==================================================
+9. ERROR HANDLING
+==================================================
+
+If STT API is unavailable:
+
+Show:
+"Voice service is not configured. Please check the AI/STT API configuration."
+
+If LLM API is unavailable:
+
+Show:
+"AI assistant is currently unavailable. Please check the AI configuration."
+
+If microphone permission is denied:
+
+Show:
+"Microphone permission is required for voice questions."
+
+If transcription fails:
+
+Show:
+"I couldn't understand the audio. Please try again."
+
+NEVER show a fake AI answer when the API fails.
+
+==================================================
+10. VOICE UI
+==================================================
+
+KEEP THE EXISTING KISANLINK VOICE ASSISTANT UI.
+
+Do NOT redesign it.
+
+Improve its functionality.
+
+Show clear states:
+
+Idle
+Listening...
+Transcribing...
+Thinking...
+Speaking...
+
+The microphone button should:
+
+1. Start recording
+2. Show listening state
+3. Stop recording
+4. Send audio to STT
+5. Display the transcription
+6. Send transcription to LLM
+7. Display AI response
+8. Speak the response using TTS
+
+Prevent multiple simultaneous recordings/requests.
+
+==================================================
+11. SECURITY
+==================================================
+
+Never place private API secrets directly in React components.
+
+Never hardcode API keys.
+
+Use environment variables / secure server-side functions.
+
+If the chosen provider requires a server-side API call, create the appropriate backend/server route.
+
+The frontend should call our secure server endpoint instead of exposing the secret.
+
+==================================================
+12. PROVIDER ABSTRACTION
+==================================================
+
+Keep providers replaceable.
+
+Use interfaces/functions similar to:
+
+speechService
+aiService
+ttsService
+
+so the application is not permanently tied to one AI provider.
+
+==================================================
+13. IMPORTANT QUALITY REQUIREMENT
+==================================================
+
+The final assistant should NOT feel like:
+
+"Question → search predefined answer → speak answer."
+
+It should feel like:
+
+"Farmer speaks naturally → system understands what they mean → real AI reasons about the question → natural response → response spoken back."
+
+It must be a genuine AI conversational assistant.
+
+==================================================
+14. BEFORE MODIFYING CODE
+==================================================
+
+FIRST inspect the existing KisanLink project.
+
+Find:
+
+- current voice assistant component
+- current chat component
+- current speech recognition implementation
+- current AI service
+- current API configuration
+- current routing
+- current styling
+
+Reuse existing components wherever possible.
+
+DO NOT rebuild the application.
+
+DO NOT redesign the UI.
+
+ONLY replace/improve the underlying voice/AI functionality.
+
+After implementation, test:
+
+1. English voice question
+2. Hindi voice question
+3. Marathi voice question
+4. mixed-language question
+5. typed question
+6. follow-up question using previous context
+7. microphone permission denial
+8. missing API configuration
+9. API failure
+10. voice response
+
+The existing KisanLink design must remain visually unchanged.
