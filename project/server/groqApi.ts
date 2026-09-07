@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Buffer } from 'node:buffer';
 
 const GROQ_API_BASE = 'https://api.groq.com/openai/v1';
-const DEFAULT_LLM_MODEL = 'llama-3.3-70b-versatile';
+const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b';
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 const MAX_JSON_BYTES = 1 * 1024 * 1024;
 
