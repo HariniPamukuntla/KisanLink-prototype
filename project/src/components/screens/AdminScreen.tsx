@@ -1,6 +1,6 @@
 import {
   Users, Store, TrendingUp, TrendingDown, Package, Clock,
-  ShieldCheck, AlertTriangle, ArrowLeft, BarChart3, Sprout
+  ShieldCheck, AlertTriangle, ArrowLeft, BarChart3, Sprout, LogOut
 } from 'lucide-react';
 import { useApp } from '../../AppContext';
 import { Card } from '../ui/Card';
@@ -14,7 +14,7 @@ import {
 import { formatINR, formatNumber, formatINRShort } from '../../utils/format';
 
 export function AdminScreen() {
-  const { t, setView, setActiveTab } = useApp();
+  const { t, setView, setActiveTab, setAuthenticated } = useApp();
 
   const maxTxnCount = Math.max(...ADMIN_MONTHLY_TRANSACTIONS.map(m => m.count));
 
@@ -25,9 +25,14 @@ export function AdminScreen() {
         subtitle="Aggregated Market Intelligence"
         onBack={() => { setView('farmer'); setActiveTab('home'); }}
         right={
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-trust-soft text-trust-deep text-xs font-bold">
-            <ShieldCheck size={14} />
-            {t('adminView')}
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-trust-soft text-trust-deep text-xs font-bold">
+              <ShieldCheck size={14} />
+              {t('adminView')}
+            </div>
+            <button onClick={() => setAuthenticated(false)} className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink-soft" aria-label="Log out">
+              <LogOut size={15} />
+            </button>
           </div>
         }
       />

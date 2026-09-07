@@ -7,7 +7,8 @@ import { Waveform } from '../ui/Waveform';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { LANGUAGES } from '../../data/languages';
 import { VOICE_SUGGESTIONS } from '../../data/voiceScripts';
-import { detectIntent, generateResponse, SPEECH_LANG_MAP, type Intent } from '../../data/voiceIntents';
+import { SPEECH_LANG_MAP } from '../../data/voiceIntents';
+import { askAgriculturalAI, exchangesToMessages, AIServiceError } from '../../services/aiService';
 import type { LanguageCode, ConnectivityMode, VoiceExchange } from '../../types';
 
 type VoiceState = 'idle' | 'listening' | 'processing' | 'responding';
@@ -87,25 +88,30 @@ export function VoiceScreen() {
     speechSynthRef.current.speak(utterance);
   }, []);
 
-  const handleRecognizedText = useCallback((recognizedText: string) => {
+  const handleRecognizedText = useCallback(async (recognizedText: string) => {
     if (!recognizedText.trim()) {
       setVoiceState('idle');
       return;
     }
 
     setVoiceState('processing');
-    setExchanges(prev => [...prev, {
+    setErrorMsg('');
+    const userExchange: VoiceExchange = {
       id: `u-${Date.now()}`,
       role: 'user',
       text: recognizedText,
       timestamp: Date.now(),
+    };
+    const nextExchanges = [...exchanges, userExchange];
+    setExchanges(prev => [...prev, {
+      ...userExchange,
     }]);
 
-    // Brief processing delay for UX feel
-    setTimeout(() => {
-      const intent: Intent = detectIntent(recognizedText);
-      const response = generateResponse(intent, language);
-
+    try {
+      const response = await askAgriculturalAI(
+        exchangesToMessages(nextExchanges),
+        language
+      );
       setExchanges(prev => [...prev, {
         id: `a-${Date.now()}`,
         role: 'assistant',
@@ -114,8 +120,14 @@ export function VoiceScreen() {
       }]);
       setVoiceState('responding');
       speakResponse(response, language);
-    }, 600);
-  }, [language, speakResponse]);
+    } catch (error) {
+      const message = error instanceof AIServiceError
+        ? error.message
+        : 'The AI assistant could not respond. Check your connection and try again.';
+      setErrorMsg(message);
+      setVoiceState('idle');
+    }
+  }, [exchanges, language, speakResponse]);
 
   const startListening = useCallback(() => {
     setErrorMsg('');

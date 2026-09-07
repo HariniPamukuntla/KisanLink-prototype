@@ -1,0 +1,1 @@
+- [Nested imported app](nested-imported-app.md) — the runnable Vite project is under `project/`; package and workflow commands must execute from that directory.

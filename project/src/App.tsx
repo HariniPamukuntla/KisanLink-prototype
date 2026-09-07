@@ -1,5 +1,5 @@
 import { AppProvider, useApp } from './AppContext';
-import { LanguageSelect } from './components/LanguageSelect';
+import { AuthScreen } from './components/AuthScreen';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { VoiceScreen } from './components/screens/VoiceScreen';
 import { AdvisorScreen } from './components/screens/AdvisorScreen';
@@ -12,7 +12,7 @@ function AppContent() {
   const { authenticated, view, activeTab } = useApp();
 
   if (!authenticated) {
-    return <LanguageSelect />;
+    return <AuthScreen />;
   }
 
   if (view === 'admin') {

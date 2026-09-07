@@ -44,11 +44,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [connectivity, setConnectivity] = useState<ConnectivityMode>('online');
   const [activeTab, setActiveTab] = useState<ScreenTab>('home');
   const [view, setView] = useState<View>('farmer');
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('kisanlink-authenticated') === 'true';
+  });
   const [buyers, setBuyers] = useState<Buyer[]>(BUYERS);
   const [groupSales, setGroupSales] = useState<GroupSale[]>(GROUP_SALES);
 
   const t = useCallback((key: string) => translate(language, key), [language]);
+
+  const updateAuthenticated = useCallback((value: boolean) => {
+    setAuthenticated(value);
+    if (typeof window !== 'undefined') {
+      if (value) {
+        window.localStorage.setItem('kisanlink-authenticated', 'true');
+      } else {
+        window.localStorage.removeItem('kisanlink-authenticated');
+      }
+    }
+  }, []);
 
   const simulateTransaction = useCallback((buyerId: string, rating: number, onTime: boolean) => {
     setBuyers(prev =>
@@ -138,7 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         view,
         setView,
         authenticated,
-        setAuthenticated,
+        setAuthenticated: updateAuthenticated,
         buyers,
         groupSales,
         simulateTransaction,

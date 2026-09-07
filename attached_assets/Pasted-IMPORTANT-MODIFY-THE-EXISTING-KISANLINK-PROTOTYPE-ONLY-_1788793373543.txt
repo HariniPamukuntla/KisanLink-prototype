@@ -1,0 +1,112 @@
+IMPORTANT: MODIFY THE EXISTING KISANLINK PROTOTYPE ONLY. DO NOT REDESIGN, REPLACE, OR CONVERT THE CURRENT UI INTO A NEWS WEBSITE OR ANY OTHER LAYOUT. KEEP THE CURRENT DASHBOARD, SIDEBAR, COLORS, CARDS, NAVIGATION, FARMER MARKET UI, AND OVERALL DESIGN EXACTLY AS THEY ARE. ADD ONLY THE FOLLOWING FEATURES:
+
+1. REAL AI VOICE ASSISTANT
+Replace the current predefined/fixed voice assistant responses with a real AI-powered conversational assistant.
+
+The assistant should accept natural-language questions from the farmer through BOTH:
+- microphone/voice input
+- typed text input
+
+It must generate dynamic responses instead of selecting from predefined answers.
+
+The assistant should behave like a helpful agricultural AI assistant and understand questions such as:
+- "What is today's market price for tomatoes?"
+- "Which crop should I grow this season?"
+- "How can I improve the quality of my onions?"
+- "What government schemes are available for farmers?"
+- "How should I store my harvested produce?"
+- "A buyer offered me this price. Is it reasonable?"
+
+It should maintain conversational context within the session and respond naturally.
+
+IMPORTANT: Do NOT fake this using hardcoded answers. Structure the application so an actual LLM API can be connected through an environment variable/API key. Use a clean AI service layer such as src/services/aiService.ts (or the project's equivalent) so the API provider can easily be changed later. If an API key is unavailable in the prototype environment, show a clear configuration message rather than pretending the AI is working.
+
+Keep the existing voice UI and improve its functionality rather than creating a completely new design.
+
+2. PROPER LOGIN PAGE
+Add a professional KisanLink login/authentication flow BEFORE the main dashboard.
+
+Create:
+- KisanLink logo/name
+- Phone number or email field
+- Password field
+- Show/hide password
+- Login button
+- "Forgot Password?"
+- "Create Account"
+- Language selection: Marathi, Hindi, English
+
+The login page must actually control access to the dashboard in the prototype. After successful demo login, navigate to the existing dashboard.
+
+Create a simple registration page with:
+- Farmer name
+- Mobile number
+- Email (optional)
+- Password
+- Preferred language
+- Location/district
+
+For the prototype, authentication can use local/demo authentication if no backend is configured. Clearly structure it so real authentication can be connected later.
+
+IMPORTANT: Language selection must NOT be the only screen anymore. Login must be the primary authentication screen, with language selection integrated into it.
+
+3. CROP QUALITY CAMERA
+Add a "Check Crop Quality" feature to the existing My Produce/crop section.
+
+When the farmer opens it:
+- Ask for camera permission
+- Open the device camera using the browser camera API
+- Show live camera preview
+- Allow the farmer to capture a photo of the crop/produce
+- Also provide an option to upload an existing crop image
+
+After capturing/uploading, show a crop-quality analysis screen.
+
+For the prototype, implement image analysis in a realistic and clearly structured way. Detect/estimate visible characteristics such as:
+- color/appearance
+- visible spots or damage
+- bruising
+- dryness
+- possible disease symptoms
+- overall visual quality
+
+Return a simple result such as:
+QUALITY: GOOD / FAIR / POOR
+
+Also display:
+- Quality score out of 100
+- Detected issues
+- Recommended action
+- Storage/handling suggestion
+
+Do NOT claim that the prototype can medically or scientifically diagnose plant diseases. Present it as an AI-assisted visual quality assessment.
+
+Structure the feature so a real computer-vision/AI image-analysis API can be connected later. Do not make the result depend only on one hardcoded result.
+
+4. UI/UX REQUIREMENT
+ABSOLUTELY PRESERVE THE EXISTING KISANLINK PROTOTYPE DESIGN.
+
+Do NOT:
+- redesign the dashboard
+- create a newspaper/news layout
+- remove existing features
+- change the sidebar structure
+- change the existing color theme
+- replace existing cards
+- remove existing farmer/market sections
+- create unnecessary new pages
+
+Only add the Login/Auth flow, Real AI Assistant functionality, and Crop Quality Camera feature into the existing application.
+
+Make all new screens responsive and consistent with the current KisanLink design.
+
+5. NAVIGATION
+Add the minimum necessary navigation:
+- Login → Dashboard
+- Dashboard → AI Assistant
+- Dashboard/My Produce → Check Crop Quality
+- Logout → Login
+
+Before making changes, inspect the existing project structure and reuse the existing components and styling wherever possible.
+
+DO NOT START FROM SCRATCH. MODIFY THE CURRENT WORKING PROJECT.

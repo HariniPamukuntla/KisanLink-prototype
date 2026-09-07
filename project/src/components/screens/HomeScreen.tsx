@@ -1,13 +1,16 @@
-import { Sprout, Bell, ChevronRight, Mic, TrendingUp, ShieldCheck, UsersRound, Calculator } from 'lucide-react';
+import { Sprout, Bell, ChevronRight, Mic, TrendingUp, ShieldCheck, UsersRound, Calculator, Camera, LogOut } from 'lucide-react';
 import { useApp } from '../../AppContext';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { DEMO_FARMER } from '../../data/mockData';
 import { formatINR } from '../../utils/format';
+import { useState } from 'react';
+import { CropQualityScreen } from './CropQualityScreen';
 
 export function HomeScreen() {
-  const { t, setActiveTab, buyers, groupSales, setView, view } = useApp();
+  const { t, setActiveTab, buyers, groupSales, setView, view, setAuthenticated } = useApp();
+  const [showCropQuality, setShowCropQuality] = useState(false);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('goodMorning') : hour < 17 ? t('goodAfternoon') : t('goodEvening');
@@ -44,6 +47,14 @@ export function HomeScreen() {
           >
             <Bell size={18} />
             <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-warning" />
+          </button>
+          <button
+            onClick={() => setAuthenticated(false)}
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-card border border-line text-ink-soft hover:bg-surface-alt transition-colors"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut size={17} />
           </button>
           <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-brand-deep font-bold text-sm">
             {DEMO_FARMER.avatar}
@@ -162,6 +173,27 @@ export function HomeScreen() {
           <span className="text-sm font-semibold text-ink">KisanVoice</span>
         </button>
       </div>
+
+      {/* My Produce */}
+      <div className="mt-4">
+        <h3 className="text-sm font-bold text-ink-soft uppercase tracking-wide mb-2 flex items-center gap-1.5">
+          <Sprout size={15} className="text-brand-deep" />
+          My Produce
+        </h3>
+        <Card className="border-brand-mid/20">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-base font-bold text-ink">{DEMO_FARMER.crop}</p>
+              <p className="text-sm text-ink-soft">{DEMO_FARMER.quantity} {t('quintals')} ready for assessment</p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setShowCropQuality(true)}>
+              <Camera size={16} />
+              Check quality
+            </Button>
+          </div>
+        </Card>
+      </div>
+      {showCropQuality && <CropQualityScreen onClose={() => setShowCropQuality(false)} />}
     </div>
   );
 }
