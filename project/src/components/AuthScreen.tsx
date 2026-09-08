@@ -8,7 +8,7 @@ import type { LanguageCode } from '../types';
 type AuthMode = 'login' | 'register';
 
 export function AuthScreen() {
-  const { setAuthenticated, setLanguage } = useApp();
+  const { register, login } = useApp();
   const [mode, setMode] = useState<AuthMode>('login');
   const [language, setLocalLanguage] = useState<LanguageCode>('mr');
   const [identifier, setIdentifier] = useState('');
@@ -16,18 +16,28 @@ export function AuthScreen() {
   const [farmerName, setFarmerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
+  const [aadhaar, setAadhaar] = useState('');
   const [district, setDistrict] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const enterDemo = (event: FormEvent) => {
+  const enterDemo = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
-    if (mode === 'register' && (!farmerName.trim() || !mobile.trim() || !district.trim())) {
-      setError('Please enter your name, mobile number, and district.');
-      return;
-    }
-    if (!identifier.trim() && mode === 'login') {
+    if (mode === 'register') {
+      if (!farmerName.trim() || !mobile.trim() || !district.trim()) {
+        setError('Please enter your name, mobile number, and district.');
+        return;
+      }
+      if (!/^\d{10}$/.test(mobile.replace(/\D/g, ''))) {
+        setError('Enter a valid 10-digit mobile number.');
+        return;
+      }
+      if (!/^\d{12}$/.test(aadhaar)) {
+        setError('Enter a valid 12-digit Aadhaar number.');
+        return;
+      }
+    } else if (!identifier.trim()) {
       setError('Enter your phone number or email to continue.');
       return;
     }
@@ -35,8 +45,10 @@ export function AuthScreen() {
       setError('Enter a password to continue.');
       return;
     }
-    setLanguage(language);
-    setAuthenticated(true);
+    const result = mode === 'register'
+      ? await register({ name: farmerName, mobile, email, aadhaar, password, language, district })
+      : await login(identifier, password);
+    if (!result.ok) setError(result.error || 'Unable to continue.');
   };
 
   return (
@@ -70,8 +82,8 @@ export function AuthScreen() {
 
           <div className="mb-5">
             <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-ink-soft">Preferred language</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['mr', 'hi', 'en'] as LanguageCode[]).map(code => {
+            <div className="grid grid-cols-4 gap-2">
+              {(['mr', 'hi', 'te', 'en'] as LanguageCode[]).map(code => {
                 const item = LANGUAGES.find(lang => lang.code === code)!;
                 return (
                   <button
@@ -93,7 +105,18 @@ export function AuthScreen() {
                 <Field label="Farmer name" value={farmerName} onChange={setFarmerName} placeholder="Enter your full name" />
                 <Field label="Mobile number" value={mobile} onChange={setMobile} placeholder="10-digit mobile number" inputMode="tel" />
                 <Field label="Email (optional)" value={email} onChange={setEmail} placeholder="you@example.com" type="email" />
+                <Field
+                  label="Aadhaar number"
+                  value={aadhaar}
+                  onChange={value => setAadhaar(value.replace(/\D/g, '').slice(0, 12))}
+                  placeholder="12-digit Aadhaar number"
+                  inputMode="numeric"
+                  maxLength={12}
+                />
                 <Field label="Location / district" value={district} onChange={setDistrict} placeholder="e.g. Nashik" icon={<MapPin size={16} />} />
+                <p className="rounded-xl bg-surface-alt px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+                  Demo verification only. Aadhaar is used to associate this prototype account and is never shown in full later.
+                </p>
               </>
             )}
             {mode === 'login' && (
@@ -129,7 +152,7 @@ export function AuthScreen() {
             </button>
           )}
           <p className="mt-4 text-center text-[11px] leading-relaxed text-ink-faint">
-            Prototype mode: any valid-looking details can continue. Connect your authentication provider to enable real accounts.
+             Prototype account mode: your login, selected language, and account history are stored locally in this browser.
           </p>
         </div>
       </div>
@@ -146,6 +169,7 @@ function Field({
   inputMode,
   icon,
   autoComplete,
+  maxLength,
 }: {
   label: string;
   value: string;
@@ -155,6 +179,7 @@ function Field({
   inputMode?: 'text' | 'tel' | 'email' | 'numeric';
   icon?: ReactNode;
   autoComplete?: string;
+  maxLength?: number;
 }) {
   return (
     <div>
@@ -168,6 +193,7 @@ function Field({
           placeholder={placeholder}
           inputMode={inputMode}
           autoComplete={autoComplete || (label === 'Email (optional)' ? 'email' : label === 'Mobile number' ? 'tel' : undefined)}
+          maxLength={maxLength}
           className={`w-full rounded-2xl border border-line bg-surface-card px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand-mid ${icon ? 'pr-10' : ''}`}
         />
         {icon && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint">{icon}</span>}

@@ -1,13 +1,35 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { LanguageCode, ConnectivityMode, ScreenTab, View, Buyer, GroupSale, Transaction } from './types';
+import type {
+  LanguageCode,
+  ConnectivityMode,
+  ScreenTab,
+  View,
+  Buyer,
+  GroupSale,
+  Transaction,
+  FarmerProfile,
+  FarmerProduce,
+  HistoryItem,
+} from './types';
 import { BUYERS, GROUP_SALES } from './data/mockData';
 import { t as translate } from './data/translations';
+import {
+  clearCurrentProfile,
+  getCurrentProfile,
+  loginAccount,
+  registerAccount,
+  updateStoredLanguage,
+  updateStoredProduce,
+  type RegistrationInput,
+} from './services/authService';
 
 interface AppContextValue {
   // Language
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
   t: (key: string) => string;
+  profile: FarmerProfile | null;
+  setProduce: (produce: FarmerProduce) => void;
 
   // Connectivity
   connectivity: ConnectivityMode;
@@ -16,6 +38,8 @@ interface AppContextValue {
   // Navigation
   activeTab: ScreenTab;
   setActiveTab: (tab: ScreenTab) => void;
+  voiceInputMode: 'voice' | 'type';
+  setVoiceInputMode: (mode: 'voice' | 'type') => void;
 
   // View
   view: View;
@@ -24,6 +48,11 @@ interface AppContextValue {
   // Auth
   authenticated: boolean;
   setAuthenticated: (a: boolean) => void;
+  register: (input: RegistrationInput) => Promise<{ ok: boolean; error?: string }>;
+  login: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => void;
+  history: HistoryItem[];
+  addHistory: (item: Omit<HistoryItem, 'id' | 'createdAt'>) => void;
 
   // Data
   buyers: Buyer[];
@@ -40,29 +69,94 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<LanguageCode>('mr');
+  const initialProfile = getCurrentProfile();
+  const [profile, setProfile] = useState<FarmerProfile | null>(initialProfile);
+  const [language, setLanguageState] = useState<LanguageCode>(initialProfile?.language || 'mr');
   const [connectivity, setConnectivity] = useState<ConnectivityMode>('online');
   const [activeTab, setActiveTab] = useState<ScreenTab>('home');
+  const [voiceInputMode, setVoiceInputMode] = useState<'voice' | 'type'>('voice');
   const [view, setView] = useState<View>('farmer');
-  const [authenticated, setAuthenticated] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('kisanlink-authenticated') === 'true';
-  });
+  const [authenticated, setAuthenticatedState] = useState(Boolean(initialProfile));
   const [buyers, setBuyers] = useState<Buyer[]>(BUYERS);
   const [groupSales, setGroupSales] = useState<GroupSale[]>(GROUP_SALES);
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
+    if (typeof window === 'undefined' || !initialProfile) return [];
+    try {
+      const value = JSON.parse(window.localStorage.getItem(`kisanlink-history:${initialProfile.id}`) || '[]');
+      return Array.isArray(value) ? value as HistoryItem[] : [];
+    } catch {
+      return [];
+    }
+  });
 
   const t = useCallback((key: string) => translate(language, key), [language]);
 
-  const updateAuthenticated = useCallback((value: boolean) => {
-    setAuthenticated(value);
-    if (typeof window !== 'undefined') {
-      if (value) {
-        window.localStorage.setItem('kisanlink-authenticated', 'true');
-      } else {
-        window.localStorage.removeItem('kisanlink-authenticated');
-      }
-    }
+  const setLanguage = useCallback((nextLanguage: LanguageCode) => {
+    setLanguageState(nextLanguage);
+    setProfile(current => current ? updateStoredLanguage(current, nextLanguage) : current);
   }, []);
+
+  const setProduce = useCallback((produce: FarmerProduce) => {
+    setProfile(current => current ? updateStoredProduce(current, produce) : current);
+  }, []);
+
+  const applyProfile = useCallback((nextProfile: FarmerProfile) => {
+    setProfile(nextProfile);
+    setLanguageState(nextProfile.language);
+    setAuthenticatedState(true);
+    setActiveTab('home');
+    setHistory(() => {
+      try {
+        const value = JSON.parse(window.localStorage.getItem(`kisanlink-history:${nextProfile.id}`) || '[]');
+        return Array.isArray(value) ? value as HistoryItem[] : [];
+      } catch {
+        return [];
+      }
+    });
+  }, []);
+
+  const register = useCallback(async (input: RegistrationInput) => {
+    const result = await registerAccount(input);
+    if (result.ok && result.profile) applyProfile(result.profile);
+    return { ok: result.ok, error: result.error };
+  }, [applyProfile]);
+
+  const login = useCallback(async (identifier: string, password: string) => {
+    const result = await loginAccount(identifier, password);
+    if (result.ok && result.profile) applyProfile(result.profile);
+    return { ok: result.ok, error: result.error };
+  }, [applyProfile]);
+
+  const logout = useCallback(() => {
+    clearCurrentProfile();
+    setProfile(null);
+    setAuthenticatedState(false);
+    setHistory([]);
+    setActiveTab('home');
+    setVoiceInputMode('voice');
+  }, []);
+
+  const updateAuthenticated = useCallback((value: boolean) => {
+    if (value && profile) {
+      setAuthenticatedState(true);
+      return;
+    }
+    logout();
+  }, [logout, profile]);
+
+  const addHistory = useCallback((item: Omit<HistoryItem, 'id' | 'createdAt'>) => {
+    if (!profile) return;
+    const nextItem: HistoryItem = {
+      ...item,
+      id: `history-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: new Date().toISOString(),
+    };
+    setHistory(previous => {
+      const next = [nextItem, ...previous].slice(0, 100);
+      window.localStorage.setItem(`kisanlink-history:${profile.id}`, JSON.stringify(next));
+      return next;
+    });
+  }, [profile]);
 
   const simulateTransaction = useCallback((buyerId: string, rating: number, onTime: boolean) => {
     setBuyers(prev =>
@@ -145,14 +239,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         language,
         setLanguage,
         t,
+        profile,
+        setProduce,
         connectivity,
         setConnectivity,
         activeTab,
         setActiveTab,
+        voiceInputMode,
+        setVoiceInputMode,
         view,
         setView,
         authenticated,
         setAuthenticated: updateAuthenticated,
+        register,
+        login,
+        logout,
+        history,
+        addHistory,
         buyers,
         groupSales,
         simulateTransaction,

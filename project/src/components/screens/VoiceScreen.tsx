@@ -16,7 +16,7 @@ import type { LanguageCode, ConnectivityMode, VoiceExchange } from '../../types'
 type VoiceState = 'idle' | 'listening' | 'transcribing' | 'thinking' | 'speaking';
 
 export function VoiceScreen() {
-  const { t, language, setLanguage, connectivity, setConnectivity } = useApp();
+  const { t, language, setLanguage, connectivity, setConnectivity, addHistory, voiceInputMode, setVoiceInputMode } = useApp();
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [exchanges, setExchanges] = useState<VoiceExchange[]>([]);
   const [showLangPicker, setShowLangPicker] = useState(false);
@@ -28,6 +28,7 @@ export function VoiceScreen() {
   const [responseLanguage, setResponseLanguage] = useState<LanguageCode>(language);
 
   const recorderRef = useRef<SpeechRecorder | null>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSpeechSupported(
@@ -40,6 +41,12 @@ export function VoiceScreen() {
       stopSpeech();
     };
   }, []);
+
+  useEffect(() => {
+    if (voiceInputMode === 'type') {
+      window.setTimeout(() => textInputRef.current?.focus(), 0);
+    }
+  }, [voiceInputMode]);
 
   const speakResponse = useCallback(async (text: string, lang: LanguageCode) => {
     setVoiceState('speaking');
@@ -68,7 +75,7 @@ export function VoiceScreen() {
     setVoiceState('thinking');
     setErrorMsg('');
     const detectedLanguage = languageHint || detectLanguageFromText(recognizedText, language);
-    setResponseLanguage(detectedLanguage);
+    setResponseLanguage(language);
     const userExchange: VoiceExchange = {
       id: `u-${Date.now()}`,
       role: 'user',
@@ -84,16 +91,23 @@ export function VoiceScreen() {
     try {
       const response = await askAgriculturalAI(
         exchangesToMessages(nextExchanges),
-        detectedLanguage
+        language
       );
       setExchanges(prev => [...prev, {
         id: `a-${Date.now()}`,
         role: 'assistant',
         text: response,
         timestamp: Date.now(),
-        language: detectedLanguage,
+         language,
       }]);
-      if (autoSpeak) void speakResponse(response, detectedLanguage);
+       addHistory({
+         type: 'conversation',
+         title: 'KisanVoice',
+         summary: recognizedText,
+         result: response,
+         details: [`${t('language')}: ${LANGUAGES.find(item => item.code === language)?.name || language}`, `${t('detectedLanguage')}: ${LANGUAGES.find(item => item.code === detectedLanguage)?.name || detectedLanguage}`],
+       });
+       if (autoSpeak) void speakResponse(response, language);
       else setVoiceState('idle');
     } catch (error) {
       const message = error instanceof AIServiceError
@@ -102,11 +116,12 @@ export function VoiceScreen() {
       setErrorMsg(message);
       setVoiceState('idle');
     }
-  }, [exchanges, language, speakResponse]);
+  }, [addHistory, exchanges, language, speakResponse, t]);
 
   const startListening = useCallback(async () => {
     setErrorMsg('');
     setInterimText('');
+    setVoiceInputMode('voice');
     if (voiceState !== 'idle') {
       return;
     }
@@ -124,7 +139,7 @@ export function VoiceScreen() {
       setErrorMsg(message);
       setVoiceState('idle');
     }
-  }, [voiceState]);
+  }, [setVoiceInputMode, voiceState]);
 
   const stopListening = useCallback(async () => {
     const recorder = recorderRef.current;
@@ -133,8 +148,6 @@ export function VoiceScreen() {
     setInterimText('');
     try {
       const transcription = await recorder.stop();
-      const detectedLanguage = transcription.language || detectLanguageFromText(transcription.text, language);
-      setResponseLanguage(detectedLanguage);
       await handleRecognizedText(transcription.text, transcription.language);
     } catch (error) {
       const message = error instanceof SpeechServiceError
@@ -143,7 +156,7 @@ export function VoiceScreen() {
       setErrorMsg(message);
       setVoiceState('idle');
     }
-  }, [handleRecognizedText, language, voiceState]);
+  }, [handleRecognizedText, voiceState]);
 
   const handleTextInput = useCallback(() => {
     const text = textInput.trim();
@@ -283,7 +296,7 @@ export function VoiceScreen() {
                 }`}
               >
                 {ex.role === 'user' && (
-                  <span className="block text-[10px] font-bold text-market-deep/60 mb-1">You said:</span>
+            <span className="block text-[10px] font-bold text-market-deep/60 mb-1">{t('youSaid')}</span>
                 )}
                 <div className="flex items-start gap-2">
                   <span className="flex-1">{ex.text}</span>
@@ -308,11 +321,12 @@ export function VoiceScreen() {
       <div className="mb-4">
         <div className="flex items-center gap-2">
           <input
+            ref={textInputRef}
             type="text"
             value={textInput}
             onChange={e => setTextInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleTextInput(); }}
-            placeholder="Type your question..."
+            placeholder={t('typeQuestion')}
             className="flex-1 px-4 py-3 rounded-2xl bg-surface-card border border-line text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-brand-mid transition-colors"
           />
           <Button

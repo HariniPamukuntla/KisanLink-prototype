@@ -1,4 +1,4 @@
-import { Home, Mic, Calculator, Users, UsersRound } from 'lucide-react';
+import { Home, Mic, Calculator, Users, UsersRound, History } from 'lucide-react';
 import type { ScreenTab } from '../../types';
 import { useApp } from '../../AppContext';
 
@@ -8,6 +8,7 @@ const TABS: { id: ScreenTab; icon: typeof Home; key: string }[] = [
   { id: 'advisor', icon: Calculator, key: 'advisor' },
   { id: 'buyers', icon: Users, key: 'buyers' },
   { id: 'groups', icon: UsersRound, key: 'groups' },
+  { id: 'history', icon: History, key: 'history' },
 ];
 
 export function BottomNav() {
@@ -15,7 +16,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface-card border-t border-line shadow-nav safe-bottom">
-      <div className="max-w-2xl mx-auto flex items-stretch">
+      <div className="max-w-2xl mx-auto flex items-stretch overflow-x-auto">
         {TABS.map(({ id, icon: Icon, key }) => {
           const active = activeTab === id;
           return (

@@ -11,9 +11,60 @@ export interface Language {
 
 export type ConnectivityMode = 'online' | 'call' | 'sms';
 
-export type ScreenTab = 'home' | 'voice' | 'advisor' | 'buyers' | 'groups';
+export type ScreenTab = 'home' | 'voice' | 'advisor' | 'buyers' | 'groups' | 'history';
 
 export type View = 'farmer' | 'admin';
+
+export interface FarmerProfile {
+  id: string;
+  name: string;
+  mobile: string;
+  email?: string;
+  aadhaarLast4: string;
+  district: string;
+  language: LanguageCode;
+  createdAt: string;
+  produce?: FarmerProduce;
+}
+
+export interface FarmerProduce {
+  cropName: string;
+  quantityQuintals: number;
+  grade: 'A' | 'B' | 'C';
+}
+
+export type HistoryType = 'conversation' | 'quality' | 'recommendation' | 'buyer';
+
+export interface HistoryItem {
+  id: string;
+  type: HistoryType;
+  title: string;
+  summary: string;
+  result: string;
+  createdAt: string;
+  details: string[];
+}
+
+export interface CropQualityInput {
+  cropName: string;
+  variety: string;
+  harvestDate: string;
+  quantityQuintals: number;
+  storageCondition: string;
+  storageLocation: string;
+  handlingNotes: string;
+}
+
+export interface CropQualityResult {
+  grade: 'A' | 'B' | 'C';
+  score: number;
+  reasoning: string;
+  visibleObservations: string[];
+  freshnessAssessment: string;
+  recommendations: string[];
+  sellingRecommendation: string;
+  confidence: 'high' | 'medium' | 'low';
+}
 
 export interface TrustMetrics {
   trustScore: number;

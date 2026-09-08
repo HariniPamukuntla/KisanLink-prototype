@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  MapPin, ShieldCheck, ArrowLeft, TrendingUp, Clock, AlertTriangle,
+  ShieldCheck, ArrowLeft, TrendingUp, Clock, AlertTriangle,
   Star, CheckCircle2, Plus
 } from 'lucide-react';
 import { useApp } from '../../AppContext';
@@ -14,7 +14,7 @@ import { formatINR } from '../../utils/format';
 import type { Buyer } from '../../types';
 
 export function BuyersScreen() {
-  const { t, buyers, setActiveTab } = useApp();
+  const { t, buyers } = useApp();
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
 
   const selectedBuyer = buyers.find(b => b.id === selectedBuyerId) || null;

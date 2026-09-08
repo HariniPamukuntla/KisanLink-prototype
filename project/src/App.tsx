@@ -5,6 +5,7 @@ import { VoiceScreen } from './components/screens/VoiceScreen';
 import { AdvisorScreen } from './components/screens/AdvisorScreen';
 import { BuyersScreen } from './components/screens/BuyersScreen';
 import { GroupsScreen } from './components/screens/GroupsScreen';
+import { HistoryScreen } from './components/screens/HistoryScreen';
 import { AdminScreen } from './components/screens/AdminScreen';
 import { BottomNav } from './components/ui/BottomNav';
 
@@ -33,6 +34,7 @@ function AppContent() {
         {activeTab === 'advisor' && <AdvisorScreen />}
         {activeTab === 'buyers' && <BuyersScreen />}
         {activeTab === 'groups' && <GroupsScreen />}
+        {activeTab === 'history' && <HistoryScreen />}
       </div>
       <BottomNav />
     </div>

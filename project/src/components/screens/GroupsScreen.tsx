@@ -10,11 +10,10 @@ import { Chip } from '../ui/Chip';
 import { Modal } from '../ui/Modal';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { formatINR } from '../../utils/format';
-import { DEMO_FARMER } from '../../data/mockData';
 import type { GroupSale } from '../../types';
 
 export function GroupsScreen() {
-  const { t, groupSales, joinGroup, confirmGroupSale } = useApp();
+  const { t, groupSales, joinGroup, confirmGroupSale, profile } = useApp();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -109,7 +108,7 @@ export function GroupsScreen() {
                     <div>
                       <p className="text-sm font-semibold text-ink">
                         {f.isCurrentUser ? `${t('you')}` : f.name}
-                        {f.isCurrentUser && <span className="text-xs text-brand-deep ml-1">({DEMO_FARMER.name})</span>}
+                        {f.isCurrentUser && <span className="text-xs text-brand-deep ml-1">({profile?.name})</span>}
                       </p>
                       <p className="text-xs text-ink-soft">{f.village}</p>
                     </div>

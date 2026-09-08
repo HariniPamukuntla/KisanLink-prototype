@@ -1,0 +1,640 @@
+MODIFY THE EXISTING KISANLINK PROTOTYPE — DO NOT REBUILD IT
+
+I want you to inspect the CURRENT working KisanLink application and make ONLY the changes listed below.
+
+Do not redesign the application.
+Do not replace the existing dashboard.
+Do not change the existing colors, sidebar style, cards, layout, or navigation unnecessarily.
+Do not remove any working feature.
+
+IMPORTANT: Actually implement the changes in the code. Do not just tell me what should be changed.
+
+====================================================
+1. AADHAAR — CREATE ACCOUNT ONLY
+====================================================
+
+On the EXISTING "Create Account / Register" page, add:
+
+"Aadhaar Number"
+
+The registration form should contain:
+
+- Farmer Name
+- Mobile Number
+- Email (if already present)
+- Aadhaar Number
+- Password
+- Language
+- District/Location
+
+Aadhaar is required ONLY during account creation/registration.
+
+The farmer should NOT have to enter Aadhaar every time they log in.
+
+After registration:
+- Associate the Aadhaar identifier with that farmer account.
+- Prevent another account from registering with the same Aadhaar identifier.
+- Mask Aadhaar wherever it is displayed later.
+- Never show the complete Aadhaar number on the dashboard.
+
+This is a PROTOTYPE, so do NOT claim that this is real government Aadhaar authentication/e-KYC unless an actual authorized Aadhaar service is connected.
+
+====================================================
+2. LANGUAGE — ENTIRE APPLICATION MUST FOLLOW LOGIN LANGUAGE
+====================================================
+
+This is one of the MOST IMPORTANT requirements.
+
+During Create Account/Login, the farmer selects a language.
+
+Supported languages currently:
+
+- English
+- Hindi
+- Marathi
+- Telugu
+
+After the farmer selects a language, the ENTIRE APPLICATION must use that language.
+
+For example:
+
+If the farmer selects TELUGU:
+
+- Home page → Telugu
+- Sidebar → Telugu
+- Buttons → Telugu
+- Tap to Speak → Telugu
+- Tap to Type → Telugu
+- History → Telugu
+- Quality Check → Telugu
+- Instructions → Telugu
+- Error messages → Telugu
+- AI responses → Telugu
+- Voice assistant responses → Telugu
+
+Do NOT mix English into the selected language.
+
+BAD:
+"మీ పంట Market లో మంచి Price పొందుతుంది."
+
+GOOD:
+"మీ పంటకు మార్కెట్లో మంచి ధర లభించే అవకాశం ఉంది."
+
+If Hindi is selected, use Hindi throughout.
+
+If Marathi is selected, use Marathi throughout.
+
+If English is selected, use English throughout.
+
+The farmer may speak/type mixed-language sentences, but the FINAL AI RESPONSE must be in the language selected by the farmer.
+
+For example:
+Selected language = Telugu.
+
+User:
+"నా పంట price ఎక్కడ ఎక్కువ ఉంది?"
+
+AI response must be natural Telugu, not English or Telugu-English mixed unnecessarily.
+
+Create/use a centralized language system so that changing the selected language changes the application consistently.
+
+The selected language must persist for that logged-in user.
+
+====================================================
+3. HOME PAGE — TAP TO TYPE
+====================================================
+
+The current Home page has:
+
+"TAP TO SPEAK"
+
+Add another option DIRECTLY BESIDE/NEAR IT:
+
+"TAP TO TYPE"
+
+The two primary options should be:
+
+🎤 Tap to Speak
+⌨️ Tap to Type
+
+Do not remove Tap to Speak.
+
+When the user selects Tap to Type:
+
+- Open a text input/chat interface.
+- Allow the farmer to type any natural-language question.
+- Send it to the SAME real AI backend used by the voice assistant.
+- Return a real AI response.
+- Allow follow-up questions.
+- Preserve conversation context.
+
+Example:
+
+User:
+"What is the best time to sell my tomatoes?"
+
+AI answers.
+
+User:
+"What about today?"
+
+The AI must understand that "today" refers to the previous tomato-selling question.
+
+Do NOT use hardcoded/canned responses.
+
+====================================================
+4. REMOVE MOCK DATA FROM PRE-LOGIN HOME
+====================================================
+
+This is REQUIRED.
+
+Before the farmer logs in:
+
+DO NOT show:
+- mock farmer information
+- fake market information
+- fake crop information
+- fake AI decisions
+- fake history
+- fake quality results
+- another farmer's information
+
+The user should first see the authentication/login/create-account experience.
+
+Only AFTER successful login should the authenticated Home/Dashboard appear.
+
+After login, display the actual logged-in farmer's information.
+
+If there is no real data yet, show an EMPTY STATE instead of fake data.
+
+Example:
+
+"No crop information available yet."
+
+Do NOT populate the screen with fake farmer data just to make it look full.
+
+====================================================
+5. ADD HISTORY TAB
+====================================================
+
+Add a "History" tab/item to the EXISTING sidebar/navigation.
+
+Place it naturally near the existing Home / Voice / other navigation items.
+
+Do NOT redesign the sidebar.
+
+History must belong to the currently logged-in farmer.
+
+The History page should track the farmer's previous activities, including:
+
+A. Voice conversations
+B. Typed AI conversations
+C. Crop quality checks
+D. AI quality grades
+E. Buyer/trader recommendations
+F. Important AI recommendations/decisions
+
+Each history item should show:
+
+- Date
+- Time
+- Activity type
+- Short summary
+- Result
+
+The farmer should be able to click/open an item and see the previous information.
+
+CRITICAL:
+Farmer A must NEVER see Farmer B's history.
+
+History must be associated with the authenticated user/account.
+
+Do not use one global shared history for all users.
+
+====================================================
+6. VOICE ASSISTANT — FIX IT PROPERLY
+====================================================
+
+Inspect the CURRENT voice assistant implementation carefully.
+
+Do not simply leave the existing implementation as it is.
+
+The voice assistant must support a REAL CONVERSATION.
+
+Required flow:
+
+MIC
+↓
+REAL SPEECH-TO-TEXT
+↓
+REAL AI/LLM
+↓
+RESPONSE IN SELECTED LANGUAGE
+↓
+REAL TEXT-TO-SPEECH
+↓
+PLAY AUDIO
+
+The assistant must NOT use predefined responses.
+
+It must understand natural speech.
+
+It must maintain conversation context.
+
+Example:
+
+Farmer:
+"నా టమాటాలకు మంచి ధర ఎక్కడ వస్తుంది?"
+
+AI answers in Telugu.
+
+Farmer:
+"ఈరోజు అమ్మితే ఎలా ఉంటుంది?"
+
+AI must understand that "ఇది" refers to the tomato-selling discussion.
+
+Support at minimum:
+
+- English
+- Hindi
+- Marathi
+- Telugu
+
+The existing multilingual STT/LLM/TTS implementation should be inspected and repaired rather than replaced with fake browser-only speech.
+
+Use the existing API architecture and Replit Secrets.
+
+If Groq Whisper is already configured, continue using the multilingual Whisper model for STT.
+
+The AI must respond in the language selected by the farmer.
+
+The voice assistant should also work for follow-up questions.
+
+If the farmer speaks Telugu, the assistant should SPEAK the Telugu response back.
+
+If the farmer speaks Hindi, it should speak Hindi back.
+
+If Marathi, speak Marathi.
+
+If English, speak English.
+
+Do not silently translate everything into English for the final response.
+
+Also add/keep a speaker/play control for typed AI responses where appropriate so the farmer can listen to the response.
+
+====================================================
+7. CROP QUALITY CHECK — DO NOT JUDGE FROM ONE IMAGE
+====================================================
+
+This is another VERY IMPORTANT requirement.
+
+The current quality-check system appears to depend too heavily on one uploaded image.
+
+CHANGE THE WORKFLOW.
+
+The AI must NOT decide crop/produce quality based on a single image.
+
+When the farmer starts a Quality Check, create a structured data-collection process.
+
+FIRST ASK FOR THE REQUIRED INFORMATION.
+
+Collect:
+
+1. Crop/produce type
+2. Variety if known
+3. Harvest date
+4. Quantity
+5. Storage condition
+6. Where it has been stored
+7. Handling information
+8. Visible problems/damage
+9. Location/district
+10. Any other relevant crop-specific details
+
+Most importantly:
+
+ASK:
+"When did you harvest this crop/produce?"
+
+Use the harvest date to calculate:
+
+Days since harvest.
+
+Example:
+
+Harvest date = 5 September
+Current date = 8 September
+
+Days since harvest = 3 days
+
+Do NOT invent the harvest date.
+
+====================================================
+8. MULTIPLE QUALITY IMAGES
+====================================================
+
+After collecting the information, ask the farmer to provide MULTIPLE quality images.
+
+Do NOT analyze only one picture.
+
+Allow:
+
+Minimum: 4 images
+Recommended: 5 images
+Maximum: 10 images
+
+Guide the farmer to take different views.
+
+For example:
+
+Photo 1 → Overall view
+Photo 2 → Close-up
+Photo 3 → Different angle
+Photo 4 → Representative sample
+Photo 5 → Additional close-up
+
+Additional images up to 10 can be provided if necessary.
+
+Do not allow the same image to simply be uploaded repeatedly.
+
+Where possible:
+- Detect duplicate images.
+- Detect highly similar images.
+- Warn the user if the images appear identical.
+- Ask the farmer to provide a different view.
+
+====================================================
+9. QUALITY AI MUST COMBINE ALL INFORMATION
+====================================================
+
+The final quality assessment must NOT depend only on visual appearance.
+
+The AI assessment should combine:
+
+- Multiple images
+- Crop/produce type
+- Variety
+- Harvest date
+- Days since harvest
+- Quantity
+- Storage conditions
+- Handling
+- Location
+- Farmer-provided observations
+- Visible damage/issues
+- Other relevant information
+
+The AI should then classify the produce into:
+
+GRADE A
+GRADE B
+GRADE C
+
+The result should contain:
+
+- Grade
+- Quality score
+- Main observations
+- Visible issues
+- Freshness assessment
+- Days since harvest
+- Recommended action
+- Storage recommendation
+- Selling recommendation
+
+The AI should explain WHY it assigned the grade.
+
+Example:
+
+GRADE A
+
+Quality Score: 90/100
+
+Reason:
+Good visual condition, minimal visible damage, relatively fresh based on harvest date and storage information.
+
+GRADE B
+
+Quality Score: 70/100
+
+Reason:
+Moderate visible defects and reduced freshness compared with Grade A.
+
+GRADE C
+
+Quality Score: 45/100
+
+Reason:
+Significant visible damage or deterioration and/or unfavorable storage/age factors.
+
+These are examples only.
+
+The AI must actually calculate its assessment from the collected information and images.
+
+Do NOT hardcode these grades.
+
+====================================================
+10. VISION AI — ACTUALLY CONSIDER MULTIPLE IMAGES
+====================================================
+
+If the project already has a vision-capable AI API, use it.
+
+The system must pass the multiple images to the vision model rather than sending only the first image.
+
+The quality assessment service should accept something conceptually like:
+
+images[]
+cropDetails
+harvestDate
+daysSinceHarvest
+storageDetails
+handlingDetails
+location
+farmerObservations
+
+Then return structured quality results.
+
+If the current API architecture does not yet support vision analysis, create a clean service abstraction for it.
+
+Do NOT fake vision analysis.
+
+Do NOT say "AI analyzed 5 images" if the backend actually analyzed only one.
+
+====================================================
+11. GRADE → BUYER/TRADER CONNECTION
+====================================================
+
+After determining Grade A/B/C, use the grade to determine appropriate buyers/traders.
+
+The system should match based on:
+
+- Crop type
+- Grade
+- Quantity
+- Location
+- Buyer/trader requirements
+- Market/buyer suitability where data is available
+
+For example:
+
+Grade A
+→ prioritize premium/high-quality buyers.
+
+Grade B
+→ recommend standard wholesale buyers.
+
+Grade C
+→ recommend suitable lower-grade buyers/processors/local markets where applicable.
+
+The buyer recommendation should be based on the actual quality grade.
+
+Do NOT randomly show traders.
+
+For the prototype, if trader data is demo data, clearly structure it as demo data.
+
+====================================================
+12. QUALITY RESULT → HISTORY
+====================================================
+
+After completing a quality assessment:
+
+Show:
+
+- Crop
+- Number of images used
+- Harvest date
+- Days since harvest
+- Grade A/B/C
+- Quality score
+- Main observations
+- Recommended action
+- Recommended buyers/traders
+- Date/time
+
+Then save the complete quality assessment to the farmer's History.
+
+The farmer should later be able to open History and see the previous assessment.
+
+====================================================
+13. NO VIDEO FOR NOW
+====================================================
+
+Do NOT implement video/MP4 analysis now.
+
+Only implement the multiple-image workflow.
+
+Keep the architecture extensible for future video analysis.
+
+====================================================
+14. DO NOT BREAK EXISTING FEATURES
+====================================================
+
+Before finishing:
+
+Verify that these existing features still work:
+
+- Login
+- Create Account
+- Dashboard
+- Existing navigation
+- Voice assistant
+- AI responses
+- Language selection
+- Existing crop/market functionality
+
+Do not remove existing functionality.
+
+====================================================
+15. FINAL ACCEPTANCE TEST
+====================================================
+
+Test these exact scenarios before considering the task complete:
+
+TEST 1:
+Create a new account.
+Aadhaar field appears during registration.
+Aadhaar is stored/associated once.
+Normal future login does NOT ask for Aadhaar again.
+
+TEST 2:
+Login in Telugu.
+Entire application is displayed in Telugu wherever translated strings exist.
+AI responses are Telugu.
+Voice response is Telugu.
+
+TEST 3:
+Login in Hindi.
+Application and AI responses remain Hindi.
+
+TEST 4:
+Login in Marathi.
+Application and AI responses remain Marathi.
+
+TEST 5:
+Login → Home.
+The Home page has:
+Tap to Speak
+AND
+Tap to Type
+
+TEST 6:
+Tap to Type → ask a question → receive a real AI response → ask follow-up → AI remembers context.
+
+TEST 7:
+Tap to Speak → speak naturally → real transcription → real AI response → spoken response in selected language → follow-up conversation works.
+
+TEST 8:
+Before login, no fake farmer/dashboard/market/history data is visible.
+
+TEST 9:
+Login → History.
+Previous voice, typed conversations, quality checks and recommendations are visible.
+
+TEST 10:
+Quality Check.
+System asks:
+- crop
+- harvest date
+- storage
+- quantity
+- handling
+- other relevant information
+
+Then requires multiple images, not one.
+
+Test with 4-5 images.
+
+AI assessment uses the images AND the collected information.
+
+Result:
+Grade A/B/C + reasoning + recommendations.
+
+Then buyer/trader recommendations are based on the grade.
+
+Result appears in History.
+
+TEST 11:
+Login as another farmer.
+The first farmer's history and quality results must NOT appear.
+
+====================================================
+FINAL INSTRUCTION
+====================================================
+
+Implement these changes directly in the EXISTING KisanLink project.
+
+Do not just describe the solution.
+
+Do not create a new application.
+
+Do not redesign the dashboard.
+
+Do not use fake/canned AI responses.
+
+Do not show mock farmer data before login.
+
+Do not judge crop quality from one image.
+
+Do not implement video now.
+
+After implementation, run the application and verify the changes.

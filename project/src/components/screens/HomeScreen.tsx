@@ -1,16 +1,17 @@
-import { Sprout, Bell, ChevronRight, Mic, TrendingUp, ShieldCheck, UsersRound, Calculator, Camera, LogOut } from 'lucide-react';
+import { Sprout, Bell, ChevronRight, Mic, TrendingUp, ShieldCheck, UsersRound, Calculator, Camera, LogOut, Keyboard } from 'lucide-react';
 import { useApp } from '../../AppContext';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
-import { DEMO_FARMER } from '../../data/mockData';
 import { formatINR } from '../../utils/format';
 import { useState } from 'react';
 import { CropQualityScreen } from './CropQualityScreen';
 
 export function HomeScreen() {
-  const { t, setActiveTab, buyers, groupSales, setView, view, setAuthenticated } = useApp();
+  const { t, setActiveTab, setVoiceInputMode, buyers, groupSales, setView, view, setAuthenticated, profile } = useApp();
   const [showCropQuality, setShowCropQuality] = useState(false);
+
+  if (!profile) return null;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('goodMorning') : hour < 17 ? t('goodAfternoon') : t('goodEvening');
@@ -56,16 +57,16 @@ export function HomeScreen() {
           >
             <LogOut size={17} />
           </button>
-          <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-brand-deep font-bold text-sm">
-            {DEMO_FARMER.avatar}
+           <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-brand-deep font-bold text-sm">
+            {profile.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()}
           </div>
         </div>
       </div>
 
       {/* Greeting */}
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-ink">{greeting}, {DEMO_FARMER.name}</h2>
-        <p className="text-sm text-ink-soft mt-0.5">{DEMO_FARMER.crop} · {DEMO_FARMER.quantity} {t('quintals')} · {DEMO_FARMER.village}, {DEMO_FARMER.district}</p>
+         <h2 className="text-2xl font-extrabold text-ink">{greeting}, {profile.name.split(/\s+/)[0]}</h2>
+         <p className="text-sm text-ink-soft mt-0.5">{profile.district} · {t('farmerAccount')}</p>
       </div>
 
       {/* KisanVoice Hero Card */}
@@ -77,18 +78,29 @@ export function HomeScreen() {
           <span className="text-white font-bold text-base">KisanVoice</span>
         </div>
         <p className="text-white/90 text-sm mb-4">{t('speakInYourLanguage')}</p>
-        <button
-          onClick={() => setActiveTab('voice')}
-          className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-white/15 hover:bg-white/20 transition-colors backdrop-blur-sm"
-        >
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-              <Mic size={24} className="text-brand-deep" />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => { setVoiceInputMode('voice'); setActiveTab('voice'); }}
+            className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl bg-white/15 hover:bg-white/20 transition-colors backdrop-blur-sm"
+          >
+            <div className="relative">
+              <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                <Mic size={22} className="text-brand-deep" />
+              </div>
+              <span className="absolute inset-0 rounded-full animate-pulse-ring" />
             </div>
-            <span className="absolute inset-0 rounded-full animate-pulse-ring" />
-          </div>
-          <span className="text-white font-semibold text-sm">{t('tapToSpeak')}</span>
-        </button>
+            <span className="text-white font-semibold text-sm">{t('tapToSpeak')}</span>
+          </button>
+          <button
+            onClick={() => { setVoiceInputMode('type'); setActiveTab('voice'); }}
+            className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
+          >
+            <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+              <Keyboard size={22} className="text-brand-deep" />
+            </div>
+            <span className="text-white font-semibold text-sm">{t('tapToType')}</span>
+          </button>
+        </div>
         <p className="text-white/70 text-xs text-center mt-3">मराठी · हिंदी · తెలుగు · English · ગુજરાતી · বাংলা</p>
       </Card>
 
@@ -183,8 +195,12 @@ export function HomeScreen() {
         <Card className="border-brand-mid/20">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-base font-bold text-ink">{DEMO_FARMER.crop}</p>
-              <p className="text-sm text-ink-soft">{DEMO_FARMER.quantity} {t('quintals')} ready for assessment</p>
+             <p className="text-base font-bold text-ink">{profile.produce?.cropName || t('noProduceYet')}</p>
+             <p className="text-sm text-ink-soft">
+               {profile.produce
+                 ? `${profile.produce.quantityQuintals} ${t('quintals')} · Grade ${profile.produce.grade}`
+                 : t('addCropDetailsForAssessment')}
+             </p>
             </div>
             <Button size="sm" variant="secondary" onClick={() => setShowCropQuality(true)}>
               <Camera size={16} />

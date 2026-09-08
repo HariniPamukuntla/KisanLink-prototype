@@ -8,9 +8,10 @@ const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b';
 const DEFAULT_GEMINI_TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 const MAX_JSON_BYTES = 1 * 1024 * 1024;
+const MAX_QUALITY_JSON_BYTES = 18 * 1024 * 1024;
 
 const SYSTEM_PROMPT =
-  'You are KisanLink’s multilingual agricultural AI assistant. Understand the user’s intent regardless of language, dialect, informal grammar, transliteration, or mixed-language speech. Respond naturally in the language used by the user. Do not unnecessarily translate the user’s message into English. If the user speaks Hindi, answer Hindi. If Marathi, answer Marathi. If Telugu, answer Telugu. If English, answer English. If mixed language, respond naturally in a matching mixed-language style when appropriate. Help Indian farmers with agricultural questions, crops, markets, storage, buyers, government schemes, crop quality, and general farming. Never invent live market prices, government scheme details, weather data, or other real-time facts when the required live data source is unavailable.';
+  'You are KisanLink’s multilingual agricultural AI assistant. Understand the user’s intent regardless of language, dialect, informal grammar, transliteration, or mixed-language speech. Respond in the selected application language requested by the caller, while preserving useful mixed-language terms when natural. Do not invent live market prices, government scheme details, weather data, or other real-time facts when the required live data source is unavailable.';
 
 const WHISPER_PROMPT =
   'KisanLink agricultural farmer speech. Vocabulary includes farmer, crop, tomato, onion, potato, wheat, rice, market, mandi, APMC, price, quality, harvest, storage, buyer, seller, fertilizer, irrigation, Maharashtra, Nashik, Pune, Nagpur, Telangana, and government schemes. Preserve the original language, transliteration, and mixed-language speech.';
@@ -418,6 +419,134 @@ async function chat(req: IncomingMessage, res: ServerResponse) {
   sendJson(res, 200, { response: content.trim() });
 }
 
+type QualityImage = { data?: unknown; mimeType?: unknown };
+
+function textFromGemini(payload: unknown) {
+  const candidates = (payload as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }>;
+  })?.candidates;
+  return candidates?.[0]?.content?.parts?.find(part => typeof part.text === 'string')?.text;
+}
+
+function cleanJsonText(value: string) {
+  return value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+}
+
+async function assessQuality(req: IncomingMessage, res: ServerResponse) {
+  const apiKey = getGeminiKey();
+  if (!apiKey) {
+    sendJson(res, 503, { error: 'Quality vision service is not configured on the server.' });
+    return;
+  }
+
+  let body: {
+    cropName?: unknown;
+    variety?: unknown;
+    harvestDate?: unknown;
+    quantityQuintals?: unknown;
+    storageCondition?: unknown;
+    storageLocation?: unknown;
+    handlingNotes?: unknown;
+    images?: unknown;
+  };
+  try {
+    body = JSON.parse((await readRequestBody(req, MAX_QUALITY_JSON_BYTES)).toString('utf8')) as typeof body;
+  } catch (error) {
+    sendJson(res, 400, { error: error instanceof Error && error.message === 'request-too-large' ? 'The selected images are too large. Please choose smaller photos.' : 'The quality assessment request is invalid.' });
+    return;
+  }
+
+  const images = Array.isArray(body.images)
+    ? body.images.filter((image): image is QualityImage => (
+      typeof image === 'object' &&
+      image !== null &&
+      typeof (image as QualityImage).data === 'string' &&
+      typeof (image as QualityImage).mimeType === 'string'
+    )).slice(0, 10)
+    : [];
+  const cropName = typeof body.cropName === 'string' ? body.cropName.trim() : '';
+  if (!cropName || images.length < 4) {
+    sendJson(res, 400, { error: 'Crop details and at least four images are required.' });
+    return;
+  }
+
+  const imageParts = images.map(image => ({
+    inlineData: {
+      mimeType: image.mimeType as string,
+      data: image.data as string,
+    },
+  }));
+  const metadata = JSON.stringify({
+    cropName,
+    variety: typeof body.variety === 'string' ? body.variety.trim() : '',
+    harvestDate: typeof body.harvestDate === 'string' ? body.harvestDate : '',
+    quantityQuintals: body.quantityQuintals,
+    storageCondition: typeof body.storageCondition === 'string' ? body.storageCondition : '',
+    storageLocation: typeof body.storageLocation === 'string' ? body.storageLocation : '',
+    handlingNotes: typeof body.handlingNotes === 'string' ? body.handlingNotes : '',
+    imageCount: images.length,
+  });
+  const prompt = `You are KisanLink's crop quality assessor. Assess the provided ${images.length} crop images together with the farmer's structured information. Return ONLY valid JSON with exactly these keys: grade (A, B, or C), score (integer 0-100), reasoning (string), visibleObservations (array of strings), freshnessAssessment (string), recommendations (array of strings), sellingRecommendation (string), confidence (high, medium, or low). Use Grade A for consistently healthy, clean, market-ready produce; Grade B for usable produce with visible minor issues or unevenness; Grade C for significant visible damage, spoilage, contamination, or handling risk. Base the result on all images and metadata, not a fixed example. Do not diagnose plant disease or claim certainty beyond what is visible. Mention when lighting, framing, or image quality limits confidence. Structured farmer information: ${metadata}`;
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${GEMINI_API_BASE}/models/${process.env.GEMINI_VISION_MODEL?.trim() || 'gemini-2.5-flash'}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }, ...imageParts] }],
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' },
+        }),
+      }
+    );
+  } catch (error) {
+    logProviderError('quality assessment network request', 502, error instanceof Error ? error.message : 'Network error');
+    sendJson(res, 502, { error: 'The quality assessment service could not be reached.' });
+    return;
+  }
+
+  if (!response.ok) {
+    const message = await readProviderError(response);
+    logProviderError('quality assessment provider request', response.status, message);
+    sendJson(res, 502, { error: 'The quality assessment service is temporarily unavailable.' });
+    return;
+  }
+
+  const providerPayload = await response.json();
+  const raw = textFromGemini(providerPayload);
+  if (typeof raw !== 'string') {
+    sendJson(res, 502, { error: 'The quality assessment service returned no result.' });
+    return;
+  }
+
+  let result: Record<string, unknown>;
+  try {
+    result = JSON.parse(cleanJsonText(raw)) as Record<string, unknown>;
+  } catch {
+    sendJson(res, 502, { error: 'The quality assessment service returned an unreadable result.' });
+    return;
+  }
+
+  const grade = result.grade;
+  const score = Number(result.score);
+  if ((grade !== 'A' && grade !== 'B' && grade !== 'C') || !Number.isFinite(score)) {
+    sendJson(res, 502, { error: 'The quality assessment service returned an incomplete result.' });
+    return;
+  }
+  sendJson(res, 200, {
+    grade,
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    reasoning: typeof result.reasoning === 'string' ? result.reasoning : 'The assessment is based on the submitted images and crop information.',
+    visibleObservations: Array.isArray(result.visibleObservations) ? result.visibleObservations.filter(item => typeof item === 'string').slice(0, 8) : [],
+    freshnessAssessment: typeof result.freshnessAssessment === 'string' ? result.freshnessAssessment : 'Freshness could not be determined beyond the visible evidence.',
+    recommendations: Array.isArray(result.recommendations) ? result.recommendations.filter(item => typeof item === 'string').slice(0, 8) : [],
+    sellingRecommendation: typeof result.sellingRecommendation === 'string' ? result.sellingRecommendation : 'Review the matched buyer options before selling.',
+    confidence: result.confidence === 'high' || result.confidence === 'medium' ? result.confidence : 'low',
+  });
+}
+
 async function handleRequest(req: IncomingMessage, res: ServerResponse, next: () => void) {
   const path = req.url?.split('?')[0] || '';
 
@@ -438,6 +567,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, next: ()
 
   if (path === '/api/voice/speak' && req.method === 'POST') {
     await speak(req, res);
+    return;
+  }
+
+  if (path === '/api/quality/assess' && req.method === 'POST') {
+    await assessQuality(req, res);
     return;
   }
 
