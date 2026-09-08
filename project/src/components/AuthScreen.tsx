@@ -1,16 +1,30 @@
 import { useState, type ReactNode, type FormEvent } from 'react';
 import { Eye, EyeOff, MapPin, Sprout, UserPlus, LogIn } from 'lucide-react';
 import { useApp } from '../AppContext';
+import { BuyerAuthScreen } from './BuyerAuthScreen';
 import { Button } from './ui/Button';
 import { LANGUAGES } from '../data/languages';
-import type { LanguageCode } from '../types';
+import type { AccountRole, LanguageCode } from '../types';
 
 type AuthMode = 'login' | 'register';
 
 export function AuthScreen() {
+  const { language, setLanguage } = useApp();
+  const [role, setRole] = useState<AccountRole | null>(null);
+
+  if (role === 'buyer') {
+    return <BuyerAuthScreen initialLanguage={language} onBack={() => setRole(null)} />;
+  }
+  if (role === 'farmer') {
+    return <FarmerAuthFlow initialLanguage={language} />;
+  }
+  return <RoleSelection language={language} onLanguageChange={setLanguage} onSelect={setRole} />;
+}
+
+function FarmerAuthFlow({ initialLanguage }: { initialLanguage: LanguageCode }) {
   const { register, login } = useApp();
   const [mode, setMode] = useState<AuthMode>('login');
-  const [language, setLocalLanguage] = useState<LanguageCode>('mr');
+  const [language, setLocalLanguage] = useState<LanguageCode>(initialLanguage);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [farmerName, setFarmerName] = useState('');
@@ -158,6 +172,55 @@ export function AuthScreen() {
       </div>
     </div>
   );
+}
+
+function RoleSelection({ language, onLanguageChange, onSelect }: { language: LanguageCode; onLanguageChange: (language: LanguageCode) => void; onSelect: (role: AccountRole) => void }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-brand-tint via-surface to-surface px-4 py-8 sm:py-12">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-deep shadow-brand-glow">
+            <Sprout size={34} className="text-white" strokeWidth={2.2} />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-brand-deep">KisanLink</h1>
+          <p className="mt-1 text-sm text-ink-soft">Market Intelligence for Farmers</p>
+        </div>
+        <div className="card">
+          <h2 className="text-center text-xl font-extrabold text-ink">{translateRole(language, 'roleQuestion')}</h2>
+          <p className="mt-1 text-center text-sm text-ink-soft">{translateRole(language, 'roleSubtitle')}</p>
+          <div className="mt-6 grid gap-3">
+            <button type="button" onClick={() => onSelect('farmer')} className="flex items-center gap-4 rounded-3xl border border-brand-mid/30 bg-brand-soft/60 p-4 text-left transition hover:border-brand-deep">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-deep text-2xl">🌾</span>
+              <span><strong className="block text-base text-ink">{translateRole(language, 'farmerRole')}</strong><span className="text-sm text-ink-soft">{translateRole(language, 'farmerRoleDescription')}</span></span>
+            </button>
+            <button type="button" onClick={() => onSelect('buyer')} className="flex items-center gap-4 rounded-3xl border border-market/30 bg-market-soft/60 p-4 text-left transition hover:border-market-deep">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-market-deep text-2xl">🛒</span>
+              <span><strong className="block text-base text-ink">{translateRole(language, 'buyerRole')}</strong><span className="text-sm text-ink-soft">{translateRole(language, 'buyerRoleDescription')}</span></span>
+            </button>
+          </div>
+          <div className="mt-6">
+            <label className="mb-2 block text-center text-xs font-bold uppercase tracking-wide text-ink-soft">{translateRole(language, 'preferredLanguage')}</label>
+            <div className="grid grid-cols-4 gap-2">
+              {(['mr', 'hi', 'te', 'en'] as LanguageCode[]).map(code => {
+                const item = LANGUAGES.find(lang => lang.code === code)!;
+                return <button key={code} type="button" onClick={() => onLanguageChange(code)} className={`rounded-xl border px-2 py-2 text-sm font-semibold ${language === code ? 'border-brand-deep bg-brand-soft text-brand-deep' : 'border-line bg-surface-card text-ink-soft'}`}>{item.nativeName}</button>;
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function translateRole(language: LanguageCode, key: string) {
+  const labels: Record<string, Record<string, string>> = {
+    en: { roleQuestion: 'How do you want to use KisanLink?', roleSubtitle: 'Choose the experience that fits your work.', farmerRole: 'Farmer', farmerRoleDescription: 'Sell produce, ask questions, and find trusted buyers.', buyerRole: 'Buyer', buyerRoleDescription: 'Browse AI-assisted produce listings and send requests.', preferredLanguage: 'Preferred language' },
+    mr: { roleQuestion: 'तुम्हाला KisanLink कसा वापरायचा आहे?', roleSubtitle: 'तुमच्या कामासाठी योग्य अनुभव निवडा.', farmerRole: 'शेतकरी', farmerRoleDescription: 'पीक विका, प्रश्न विचारा आणि विश्वासार्ह खरेदीदार शोधा.', buyerRole: 'खरेदीदार', buyerRoleDescription: 'AI-सहाय्यित पीक सूची पहा आणि विनंत्या पाठवा.', preferredLanguage: 'पसंतीची भाषा' },
+    hi: { roleQuestion: 'आप KisanLink का उपयोग कैसे करना चाहते हैं?', roleSubtitle: 'अपने काम के लिए सही अनुभव चुनें।', farmerRole: 'किसान', farmerRoleDescription: 'उपज बेचें, सवाल पूछें और भरोसेमंद खरीदार खोजें।', buyerRole: 'खरीदार', buyerRoleDescription: 'AI-सहायित उपज सूची देखें और अनुरोध भेजें।', preferredLanguage: 'पसंदीदा भाषा' },
+    te: { roleQuestion: 'మీరు KisanLink ను ఎలా ఉపయోగించాలనుకుంటున్నారు?', roleSubtitle: 'మీ పనికి సరిపోయే అనుభవాన్ని ఎంచుకోండి.', farmerRole: 'రైతు', farmerRoleDescription: 'పంటను అమ్మండి, ప్రశ్నలు అడగండి, నమ్మకమైన కొనుగోలుదారులను కనుగొనండి.', buyerRole: 'కొనుగోలుదారు', buyerRoleDescription: 'AI సహాయంతో పంట జాబితాలను చూసి అభ్యర్థనలు పంపండి.', preferredLanguage: 'ఇష్టమైన భాష' },
+  };
+  return labels[language]?.[key] || labels.en[key] || key;
 }
 
 function Field({

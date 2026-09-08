@@ -1,0 +1,257 @@
+MODIFY THE EXISTING KISANLINK PROTOTYPE — ADD BUYER ROLE ONLY
+
+IMPORTANT:
+DO NOT redesign, replace, restructure, restyle, or modify the existing FARMER dashboard/page/navigation in any way. The current Farmer UI is FINAL and LOCKED.
+
+Current Farmer navigation is:
+Home | Voice | Advisor | Buyers | Groups | History
+
+Do not change its layout, colors, icons, spacing, cards, or navigation.
+
+==================================================
+1. ROLE SELECTION — BEFORE LOGIN/REGISTRATION
+==================================================
+
+Update the authentication entry flow so that the user first sees:
+
+"How do you want to use KisanLink?"
+
+Two clean options:
+🌾 Farmer
+🛒 Buyer
+
+Do NOT show Admin anywhere to normal users.
+
+After selecting Farmer:
+→ Continue to the existing Farmer login/register flow exactly as it currently works.
+
+After selecting Buyer:
+→ Open a separate Buyer login/register flow.
+
+The role must be stored with the account so the correct dashboard opens after login.
+
+==================================================
+2. BUYER REGISTRATION
+==================================================
+
+Create a simple Buyer registration form:
+
+• Business/Buyer Name
+• Mobile Number
+• Email (optional)
+• Password
+• Confirm Password
+• State
+• District / Location
+• Buyer Type:
+  - Wholesaler
+  - Retailer
+  - Processor
+  - Other
+• Crops they usually purchase
+• Preferred quality grades:
+  - Grade A
+  - Grade B
+  - Grade C
+• Typical quantity requirement
+
+Keep the registration UI professional, clean and consistent with KisanLink.
+
+Do NOT ask buyers for Aadhaar unless absolutely necessary. Farmer Aadhaar registration must remain part of the Farmer flow only.
+
+==================================================
+3. BUYER DASHBOARD
+==================================================
+
+After Buyer login, open a dedicated Buyer Dashboard.
+
+The Buyer dashboard should be SIMPLE and practical — NOT overloaded with features.
+
+Buyer navigation:
+
+🏠 Home
+🌾 Marketplace
+📦 Requests / Orders
+👤 Profile
+
+Do not add unnecessary pages.
+
+==================================================
+4. BUYER HOME
+==================================================
+
+Show useful marketplace information:
+
+• Available produce listings
+• Crop name
+• Quantity
+• AI-assisted quality grade (A/B/C)
+• Harvest date
+• Farmer location/district
+• Expected price
+• Photos
+• "View Details"
+• "Contact / Send Request"
+
+Add a small section:
+
+"AI-Matched Produce"
+
+This should show listings that best match the buyer's:
+• preferred crops
+• preferred grade
+• required quantity
+• location
+• buying requirements
+
+==================================================
+5. MARKETPLACE
+==================================================
+
+Create a clean marketplace where buyers can browse farmer listings.
+
+Each listing should show:
+
+Crop
+Variety (if available)
+Quantity
+Grade A/B/C
+Quality score
+Harvest date
+Days since harvest
+Location
+Expected price
+Produce photos
+
+Add filters:
+
+• Crop
+• Grade
+• Location
+• Quantity
+• Harvest freshness
+
+When the buyer opens a listing, show all available produce information clearly.
+
+IMPORTANT:
+Quality must be described as:
+"AI-assisted quality assessment"
+
+Do NOT claim laboratory-certified grading.
+
+==================================================
+6. BUYER REQUEST / ORDER
+==================================================
+
+Allow the buyer to:
+
+• Send interest/request for a listing
+• Enter required quantity
+• View request status
+• View accepted/rejected/pending requests
+
+Keep this prototype-level. Do not build unnecessary payment or logistics systems.
+
+==================================================
+7. BUYER PROFILE
+==================================================
+
+Show:
+
+• Buyer/business name
+• Buyer type
+• Location
+• Crops purchased
+• Preferred grades
+• Typical quantity requirement
+• Verification status
+• Basic transaction/reliability information if available
+
+Add a simple "Buyer Trust Profile" section.
+
+The purpose is to make farmer-buyer interaction more trustworthy.
+
+==================================================
+8. FARMER ↔ BUYER CONNECTION
+==================================================
+
+The existing Farmer dashboard must remain unchanged.
+
+However, Buyer listings should use the farmer's existing produce/quality information where available.
+
+Flow:
+
+Farmer adds produce
+→ Quality Check produces AI-assisted Grade A/B/C
+→ Produce becomes available to eligible buyers
+→ Buyer sees listing
+→ Buyer can send request
+→ Farmer can see the request in the existing relevant Farmer area
+
+Do NOT redesign the Farmer page to accommodate this.
+
+==================================================
+9. DATA ISOLATION
+==================================================
+
+Each logged-in Buyer should see their own:
+
+• Profile
+• Preferences
+• Requests
+• Orders
+
+Each Farmer should continue seeing only their own farmer data.
+
+Do not use one shared hardcoded buyer account.
+
+Prototype/local authentication is acceptable.
+
+==================================================
+10. LANGUAGE
+==================================================
+
+The role-selection, Buyer login/register and Buyer dashboard should follow the selected application language.
+
+Support the same core languages already supported by KisanLink:
+
+English
+Hindi
+Marathi
+Telugu
+
+Do not randomly mix English into another selected language.
+
+==================================================
+11. STRICT DESIGN RULE
+==================================================
+
+DO NOT TOUCH THE EXISTING FARMER DASHBOARD.
+
+Do not:
+• redesign Farmer Home
+• change Farmer navigation
+• change Farmer colors
+• change Farmer cards
+• replace the Farmer UI
+• create a newspaper/news-style layout
+• move Farmer features
+• remove Farmer features
+
+Only add the new role-selection entry point and the separate Buyer experience.
+
+The final user flow must be:
+
+KisanLink
+↓
+"How do you want to use KisanLink?"
+↓
+Farmer OR Buyer
+↓
+Role-specific Login/Register
+↓
+Role-specific Dashboard
+
+Admin functionality, admin dashboards, admin terminology and admin controls must NOT be visible to normal users.
+
+IMPLEMENT these changes in the EXISTING PROJECT. Do not rebuild the application from scratch.

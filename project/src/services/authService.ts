@@ -1,12 +1,21 @@
-import type { FarmerProfile, FarmerProduce, LanguageCode } from '../types';
+import type {
+  AccountRole,
+  AppProfile,
+  AuthSession,
+  BuyerProfile,
+  FarmerProfile,
+  FarmerProduce,
+  LanguageCode,
+} from '../types';
 
 const ACCOUNTS_KEY = 'kisanlink-accounts';
 const CURRENT_USER_KEY = 'kisanlink-current-user';
 
 interface StoredAccount {
-  profile: FarmerProfile;
+  role: AccountRole;
+  profile: AppProfile;
   passwordHash: string;
-  aadhaarHash: string;
+  aadhaarHash?: string;
   mobileKey: string;
   emailKey?: string;
 }
@@ -21,17 +30,37 @@ export interface RegistrationInput {
   district: string;
 }
 
+export interface BuyerRegistrationInput {
+  businessName: string;
+  mobile: string;
+  email?: string;
+  password: string;
+  language: LanguageCode;
+  state: string;
+  district: string;
+  buyerType: BuyerProfile['buyerType'];
+  crops: string[];
+  preferredGrades: BuyerProfile['preferredGrades'];
+  typicalQuantityQuintals: number;
+}
+
 export interface AuthResult {
   ok: boolean;
   error?: string;
-  profile?: FarmerProfile;
+  profile?: AppProfile;
+  role?: AccountRole;
 }
 
 function readAccounts(): StoredAccount[] {
   if (typeof window === 'undefined') return [];
   try {
     const value = JSON.parse(window.localStorage.getItem(ACCOUNTS_KEY) || '[]');
-    return Array.isArray(value) ? value as StoredAccount[] : [];
+    return Array.isArray(value)
+      ? (value as Array<Partial<StoredAccount> & { profile: AppProfile }>).map(account => ({
+        ...account,
+        role: account.role || ((account.profile as BuyerProfile).role === 'buyer' ? 'buyer' : 'farmer'),
+      })) as StoredAccount[]
+      : [];
   } catch {
     return [];
   }
@@ -59,17 +88,28 @@ function saveAccounts(accounts: StoredAccount[]) {
 }
 
 function saveCurrentProfile(profile: FarmerProfile) {
-  window.localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(profile));
+  window.localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ role: 'farmer', profile }));
 }
 
-export function getCurrentProfile(): FarmerProfile | null {
+function saveCurrentSession(session: AuthSession) {
+  window.localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(session));
+}
+
+export function getCurrentSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
   try {
     const value = JSON.parse(window.localStorage.getItem(CURRENT_USER_KEY) || 'null');
-    return value && typeof value.id === 'string' ? value as FarmerProfile : null;
+    if (value?.profile && value?.role) return value as AuthSession;
+    if (value?.id) return { role: 'farmer', profile: value as FarmerProfile };
+    return null;
   } catch {
     return null;
   }
+}
+
+export function getCurrentProfile(): FarmerProfile | null {
+  const session = getCurrentSession();
+  return session?.role === 'farmer' ? session.profile as FarmerProfile : null;
 }
 
 export function clearCurrentProfile() {
@@ -102,6 +142,7 @@ export async function registerAccount(input: RegistrationInput): Promise<AuthRes
   };
 
   accounts.push({
+    role: 'farmer',
     profile,
     passwordHash: await hashValue(input.password),
     aadhaarHash,
@@ -110,13 +151,66 @@ export async function registerAccount(input: RegistrationInput): Promise<AuthRes
   });
   saveAccounts(accounts);
   saveCurrentProfile(profile);
-  return { ok: true, profile };
+  return { ok: true, profile, role: 'farmer' };
 }
 
 export async function loginAccount(identifier: string, password: string): Promise<AuthResult> {
+  return loginForRole(identifier, password, 'farmer');
+}
+
+export async function registerBuyerAccount(input: BuyerRegistrationInput): Promise<AuthResult> {
+  const mobileKey = normalizeIdentifier(input.mobile);
+  const emailKey = input.email?.trim() ? normalize(input.email) : undefined;
+  const accounts = readAccounts();
+
+  if (accounts.some(account => account.mobileKey === mobileKey || (emailKey && account.emailKey === emailKey))) {
+    return { ok: false, error: 'An account already exists with this mobile number or email.' };
+  }
+
+  const profile: BuyerProfile = {
+    id: `buyer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    role: 'buyer',
+    businessName: input.businessName.trim(),
+    mobile: input.mobile.trim(),
+    email: input.email?.trim() || undefined,
+    state: input.state.trim(),
+    district: input.district.trim(),
+    buyerType: input.buyerType,
+    crops: input.crops.map(crop => crop.trim()).filter(Boolean),
+    preferredGrades: input.preferredGrades,
+    typicalQuantityQuintals: input.typicalQuantityQuintals,
+    language: input.language,
+    createdAt: new Date().toISOString(),
+    verified: false,
+    trust: {
+      trustScore: 72,
+      completedDeals: 0,
+      successfulDeals: 0,
+      onTimePaymentPct: 0,
+      complaints: 0,
+    },
+  };
+
+  accounts.push({
+    role: 'buyer',
+    profile,
+    passwordHash: await hashValue(input.password),
+    mobileKey,
+    emailKey,
+  });
+  saveAccounts(accounts);
+  saveCurrentSession({ role: 'buyer', profile });
+  return { ok: true, profile, role: 'buyer' };
+}
+
+export async function loginBuyerAccount(identifier: string, password: string): Promise<AuthResult> {
+  return loginForRole(identifier, password, 'buyer');
+}
+
+async function loginForRole(identifier: string, password: string, role: AccountRole): Promise<AuthResult> {
   const key = normalizeIdentifier(identifier);
   const passwordHash = await hashValue(password);
-  const account = readAccounts().find(item => (
+  const account = readAccounts().find(item => item.role === role && (
     item.mobileKey === key || item.emailKey === key
   ));
 
@@ -124,18 +218,18 @@ export async function loginAccount(identifier: string, password: string): Promis
     return { ok: false, error: 'The login details do not match an account.' };
   }
 
-  saveCurrentProfile(account.profile);
-  return { ok: true, profile: account.profile };
+  saveCurrentSession({ role: account.role, profile: account.profile });
+  return { ok: true, profile: account.profile, role: account.role };
 }
 
-export function updateStoredLanguage(profile: FarmerProfile, language: LanguageCode) {
+export function updateStoredLanguage(profile: AppProfile, language: LanguageCode) {
   const accounts = readAccounts();
   const updatedProfile = { ...profile, language };
   const updated = accounts.map(account => (
     account.profile.id === profile.id ? { ...account, profile: updatedProfile } : account
   ));
   saveAccounts(updated);
-  saveCurrentProfile(updatedProfile);
+  saveCurrentSession({ role: 'role' in profile ? 'buyer' : 'farmer', profile: updatedProfile });
   return updatedProfile;
 }
 
@@ -148,4 +242,10 @@ export function updateStoredProduce(profile: FarmerProfile, produce: FarmerProdu
   saveAccounts(updated);
   saveCurrentProfile(updatedProfile);
   return updatedProfile;
+}
+
+export function getFarmerProfiles(): FarmerProfile[] {
+  return readAccounts()
+    .filter(account => account.role === 'farmer')
+    .map(account => account.profile as FarmerProfile);
 }

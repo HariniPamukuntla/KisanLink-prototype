@@ -1,5 +1,6 @@
 import { AppProvider, useApp } from './AppContext';
 import { AuthScreen } from './components/AuthScreen';
+import { BuyerDashboard } from './components/BuyerDashboard';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { VoiceScreen } from './components/screens/VoiceScreen';
 import { AdvisorScreen } from './components/screens/AdvisorScreen';
@@ -10,10 +11,14 @@ import { AdminScreen } from './components/screens/AdminScreen';
 import { BottomNav } from './components/ui/BottomNav';
 
 function AppContent() {
-  const { authenticated, view, activeTab } = useApp();
+  const { authenticated, role, view, activeTab } = useApp();
 
   if (!authenticated) {
     return <AuthScreen />;
+  }
+
+  if (role === 'buyer') {
+    return <BuyerDashboard />;
   }
 
   if (view === 'admin') {

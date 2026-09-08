@@ -10,6 +10,7 @@ export interface Language {
 }
 
 export type ConnectivityMode = 'online' | 'call' | 'sms';
+export type AccountRole = 'farmer' | 'buyer';
 
 export type ScreenTab = 'home' | 'voice' | 'advisor' | 'buyers' | 'groups' | 'history';
 
@@ -28,10 +29,75 @@ export interface FarmerProfile {
 }
 
 export interface FarmerProduce {
+  id?: string;
+  farmerId?: string;
+  farmerName?: string;
+  district?: string;
+  state?: string;
   cropName: string;
+  variety?: string;
   quantityQuintals: number;
   grade: 'A' | 'B' | 'C';
+  qualityScore?: number;
+  harvestDate?: string;
+  assessedAt?: string;
+  expectedPricePerQuintal?: number;
+  photos?: string[];
+  qualityConfidence?: 'high' | 'medium' | 'low';
 }
+
+export interface BuyerProfile {
+  id: string;
+  role: 'buyer';
+  businessName: string;
+  mobile: string;
+  email?: string;
+  state: string;
+  district: string;
+  buyerType: 'Wholesaler' | 'Retailer' | 'Processor' | 'Other';
+  crops: string[];
+  preferredGrades: Array<'A' | 'B' | 'C'>;
+  typicalQuantityQuintals: number;
+  language: LanguageCode;
+  createdAt: string;
+  verified: boolean;
+  trust: {
+    trustScore: number;
+    completedDeals: number;
+    successfulDeals: number;
+    onTimePaymentPct: number;
+    complaints: number;
+  };
+}
+
+export type AppProfile = FarmerProfile | BuyerProfile;
+
+export interface AuthSession {
+  role: AccountRole;
+  profile: AppProfile;
+}
+
+export interface BuyerRequest {
+  id: string;
+  buyerId: string;
+  listingId: string;
+  cropName: string;
+  farmerName: string;
+  requestedQuantity: number;
+  expectedPricePerQuintal?: number;
+  grade: 'A' | 'B' | 'C';
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
+}
+
+export type ProduceListing = FarmerProduce & {
+  id: string;
+  farmerId: string;
+  farmerName: string;
+  district: string;
+  state: string;
+  expectedPricePerQuintal: number;
+};
 
 export type HistoryType = 'conversation' | 'quality' | 'recommendation' | 'buyer';
 

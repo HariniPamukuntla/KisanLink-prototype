@@ -9,17 +9,23 @@ import type {
   Transaction,
   FarmerProfile,
   FarmerProduce,
+  BuyerProfile,
+  BuyerRequest,
+  AccountRole,
   HistoryItem,
 } from './types';
 import { BUYERS, GROUP_SALES } from './data/mockData';
 import { t as translate } from './data/translations';
 import {
   clearCurrentProfile,
-  getCurrentProfile,
   loginAccount,
   registerAccount,
+  registerBuyerAccount,
+  loginBuyerAccount,
+  getCurrentSession,
   updateStoredLanguage,
   updateStoredProduce,
+  type BuyerRegistrationInput,
   type RegistrationInput,
 } from './services/authService';
 
@@ -29,6 +35,8 @@ interface AppContextValue {
   setLanguage: (lang: LanguageCode) => void;
   t: (key: string) => string;
   profile: FarmerProfile | null;
+  buyerProfile: BuyerProfile | null;
+  role: AccountRole | null;
   setProduce: (produce: FarmerProduce) => void;
 
   // Connectivity
@@ -50,9 +58,13 @@ interface AppContextValue {
   setAuthenticated: (a: boolean) => void;
   register: (input: RegistrationInput) => Promise<{ ok: boolean; error?: string }>;
   login: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  registerBuyer: (input: BuyerRegistrationInput) => Promise<{ ok: boolean; error?: string }>;
+  loginBuyer: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   history: HistoryItem[];
   addHistory: (item: Omit<HistoryItem, 'id' | 'createdAt'>) => void;
+  buyerRequests: BuyerRequest[];
+  sendBuyerRequest: (input: Omit<BuyerRequest, 'id' | 'buyerId' | 'createdAt' | 'status'>) => void;
 
   // Data
   buyers: Buyer[];
@@ -69,14 +81,27 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const initialProfile = getCurrentProfile();
+  const initialSession = getCurrentSession();
+  const initialProfile = initialSession?.role === 'farmer' ? initialSession.profile as FarmerProfile : null;
+  const initialBuyerProfile = initialSession?.role === 'buyer' ? initialSession.profile as BuyerProfile : null;
   const [profile, setProfile] = useState<FarmerProfile | null>(initialProfile);
-  const [language, setLanguageState] = useState<LanguageCode>(initialProfile?.language || 'mr');
+  const [buyerProfile, setBuyerProfile] = useState<BuyerProfile | null>(initialBuyerProfile);
+  const [role, setRole] = useState<AccountRole | null>(initialSession?.role || null);
+  const [language, setLanguageState] = useState<LanguageCode>(initialSession?.profile.language || 'mr');
   const [connectivity, setConnectivity] = useState<ConnectivityMode>('online');
   const [activeTab, setActiveTab] = useState<ScreenTab>('home');
   const [voiceInputMode, setVoiceInputMode] = useState<'voice' | 'type'>('voice');
   const [view, setView] = useState<View>('farmer');
-  const [authenticated, setAuthenticatedState] = useState(Boolean(initialProfile));
+  const [authenticated, setAuthenticatedState] = useState(Boolean(initialSession));
+  const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>(() => {
+    if (typeof window === 'undefined' || !initialBuyerProfile) return [];
+    try {
+      const value = JSON.parse(window.localStorage.getItem(`kisanlink-buyer-requests:${initialBuyerProfile.id}`) || '[]');
+      return Array.isArray(value) ? value as BuyerRequest[] : [];
+    } catch {
+      return [];
+    }
+  });
   const [buyers, setBuyers] = useState<Buyer[]>(BUYERS);
   const [groupSales, setGroupSales] = useState<GroupSale[]>(GROUP_SALES);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -93,7 +118,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback((nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage);
-    setProfile(current => current ? updateStoredLanguage(current, nextLanguage) : current);
+    setProfile(current => current ? updateStoredLanguage(current, nextLanguage) as FarmerProfile : current);
+    setBuyerProfile(current => current ? updateStoredLanguage(current, nextLanguage) as BuyerProfile : current);
   }, []);
 
   const setProduce = useCallback((produce: FarmerProduce) => {
@@ -102,6 +128,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const applyProfile = useCallback((nextProfile: FarmerProfile) => {
     setProfile(nextProfile);
+    setBuyerProfile(null);
+    setRole('farmer');
     setLanguageState(nextProfile.language);
     setAuthenticatedState(true);
     setActiveTab('home');
@@ -115,34 +143,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const applyBuyerProfile = useCallback((nextProfile: BuyerProfile) => {
+    setProfile(null);
+    setBuyerProfile(nextProfile);
+    setRole('buyer');
+    setLanguageState(nextProfile.language);
+    setAuthenticatedState(true);
+    setActiveTab('home');
+    setBuyerRequests(() => {
+      try {
+        const value = JSON.parse(window.localStorage.getItem(`kisanlink-buyer-requests:${nextProfile.id}`) || '[]');
+        return Array.isArray(value) ? value as BuyerRequest[] : [];
+      } catch {
+        return [];
+      }
+    });
+  }, []);
+
   const register = useCallback(async (input: RegistrationInput) => {
     const result = await registerAccount(input);
-    if (result.ok && result.profile) applyProfile(result.profile);
+    if (result.ok && result.profile && result.role === 'farmer') applyProfile(result.profile as FarmerProfile);
     return { ok: result.ok, error: result.error };
   }, [applyProfile]);
 
   const login = useCallback(async (identifier: string, password: string) => {
     const result = await loginAccount(identifier, password);
-    if (result.ok && result.profile) applyProfile(result.profile);
+    if (result.ok && result.profile && result.role === 'farmer') applyProfile(result.profile as FarmerProfile);
     return { ok: result.ok, error: result.error };
   }, [applyProfile]);
+
+  const registerBuyer = useCallback(async (input: BuyerRegistrationInput) => {
+    const result = await registerBuyerAccount(input);
+    if (result.ok && result.profile && result.role === 'buyer') applyBuyerProfile(result.profile as BuyerProfile);
+    return { ok: result.ok, error: result.error };
+  }, [applyBuyerProfile]);
+
+  const loginBuyer = useCallback(async (identifier: string, password: string) => {
+    const result = await loginBuyerAccount(identifier, password);
+    if (result.ok && result.profile && result.role === 'buyer') applyBuyerProfile(result.profile as BuyerProfile);
+    return { ok: result.ok, error: result.error };
+  }, [applyBuyerProfile]);
 
   const logout = useCallback(() => {
     clearCurrentProfile();
     setProfile(null);
+    setBuyerProfile(null);
+    setRole(null);
     setAuthenticatedState(false);
     setHistory([]);
     setActiveTab('home');
     setVoiceInputMode('voice');
+    setBuyerRequests([]);
   }, []);
 
   const updateAuthenticated = useCallback((value: boolean) => {
-    if (value && profile) {
+    if (value && (profile || buyerProfile)) {
       setAuthenticatedState(true);
       return;
     }
     logout();
-  }, [logout, profile]);
+  }, [buyerProfile, logout, profile]);
 
   const addHistory = useCallback((item: Omit<HistoryItem, 'id' | 'createdAt'>) => {
     if (!profile) return;
@@ -157,6 +217,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, [profile]);
+
+  const sendBuyerRequest = useCallback((input: Omit<BuyerRequest, 'id' | 'buyerId' | 'createdAt' | 'status'>) => {
+    if (!buyerProfile) return;
+    const nextRequest: BuyerRequest = {
+      ...input,
+      id: `request-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      buyerId: buyerProfile.id,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    setBuyerRequests(previous => {
+      const next = [nextRequest, ...previous];
+      window.localStorage.setItem(`kisanlink-buyer-requests:${buyerProfile.id}`, JSON.stringify(next));
+      return next;
+    });
+  }, [buyerProfile]);
 
   const simulateTransaction = useCallback((buyerId: string, rating: number, onTime: boolean) => {
     setBuyers(prev =>
@@ -240,6 +316,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLanguage,
         t,
         profile,
+        buyerProfile,
+        role,
         setProduce,
         connectivity,
         setConnectivity,
@@ -253,9 +331,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAuthenticated: updateAuthenticated,
         register,
         login,
+        registerBuyer,
+        loginBuyer,
         logout,
         history,
         addHistory,
+        buyerRequests,
+        sendBuyerRequest,
         buyers,
         groupSales,
         simulateTransaction,
