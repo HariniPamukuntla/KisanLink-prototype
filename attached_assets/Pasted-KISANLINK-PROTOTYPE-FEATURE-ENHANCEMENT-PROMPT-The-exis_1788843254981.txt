@@ -1,0 +1,580 @@
+KISANLINK PROTOTYPE — FEATURE ENHANCEMENT PROMPT
+
+The existing KisanLink prototype is already working. DO NOT rebuild the application and DO NOT redesign the existing UI.
+
+Your job is to make the following controlled feature enhancements to the CURRENT application.
+
+IMPORTANT:
+- Preserve the existing KisanLink dashboard design, sidebar, cards, colors, navigation, layouts and overall visual identity.
+- Do not remove any existing working functionality.
+- Do not replace the current UI with a new template.
+- Do not add fake/mock farmer data to the logged-out experience.
+- Make the implementation production-structured even if some services are demo/mock because this is an SIH prototype.
+- Keep API keys server-side using Replit Secrets.
+- Before changing anything, inspect the existing project structure and reuse the current components/services wherever possible.
+
+==================================================
+1. LOGIN / CREATE ACCOUNT — AADHAAR
+==================================================
+
+Add Aadhaar as part of the farmer registration/onboarding flow.
+
+Registration should collect:
+
+- Farmer name
+- Mobile number
+- Optional email
+- Aadhaar number
+- Password
+- Preferred language
+- District/location
+
+Aadhaar UI requirements:
+
+- Show a professional Aadhaar field.
+- Allow 12-digit Aadhaar input.
+- Validate the format.
+- Mask Aadhaar after entry wherever appropriate, showing only the last 4 digits.
+- Do NOT expose or display the full Aadhaar number in the dashboard/history.
+- Do NOT store raw Aadhaar unnecessarily in client-side state/localStorage.
+- For this prototype, implement a clear "Aadhaar verification" status.
+- If real Aadhaar/e-KYC integration is not available, label it clearly as "Demo Verification" rather than falsely claiming real government verification.
+- Structure the code so a legitimate authorized Aadhaar/e-KYC provider can be integrated later.
+
+LOGIN SECURITY:
+
+The goal is to prevent another person from simply creating a proxy account using someone else's farmer identity.
+
+Use a unique verified identity/account relationship in the application.
+
+Do NOT claim that simply entering an Aadhaar number provides real Aadhaar authentication.
+
+For the prototype, prevent duplicate registration using the same verified Aadhaar identifier and mobile number.
+
+==================================================
+2. LOGIN EXPERIENCE — NO DASHBOARD BEFORE LOGIN
+==================================================
+
+Currently some mock/sample information appears before authentication.
+
+Change this.
+
+BEFORE LOGIN:
+- Show ONLY the KisanLink login/create-account experience.
+- Do NOT display farmer-specific dashboard information.
+- Do NOT display mock market information.
+- Do NOT display mock farmer history.
+- Do NOT display mock AI decisions.
+- Do NOT expose another farmer's information.
+
+AFTER SUCCESSFUL LOGIN:
+Open the farmer's authenticated home/dashboard.
+
+The authenticated home should immediately provide:
+
+- TAP TO SPEAK
+- TAP TO TYPE
+
+These should be the primary interaction options.
+
+==================================================
+3. ADD "TAP TO TYPE"
+==================================================
+
+The Home page currently has "Tap to Speak".
+
+Add another equally clear option:
+
+"TAP TO TYPE"
+
+The farmer should be able to:
+
+- Tap "Tap to Type"
+- Open a simple text input/chat interface
+- Type a natural-language question
+- Submit it
+- Receive the real AI response
+- Continue the conversation
+- See previous messages in the current session
+
+Do NOT use predefined canned answers.
+
+Use the existing real AI backend/LLM architecture.
+
+The typed interaction and voice interaction should use the SAME AI conversation system so the farmer can switch between speaking and typing naturally.
+
+Example:
+
+Farmer speaks:
+"నా పంటకు మంచి ధర ఎక్కడ వస్తుంది?"
+
+Then the farmer can type a follow-up question and the AI should understand the previous context.
+
+==================================================
+4. STRICT LANGUAGE MODE
+==================================================
+
+This is VERY IMPORTANT.
+
+When the farmer selects a language during login/registration, the application's user interface and AI interaction should consistently use that selected language.
+
+Supported languages should include at minimum:
+
+- English
+- Hindi
+- Marathi
+- Telugu
+
+Keep the architecture extensible for:
+
+- Tamil
+- Kannada
+- Bengali
+- Gujarati
+- Punjabi
+- Malayalam
+- Urdu
+
+LANGUAGE RULE:
+
+If the farmer selects Telugu:
+- UI should be Telugu
+- AI responses should be Telugu
+- Voice responses should be Telugu
+- Buttons, labels, headings, instructions, errors and system messages should be Telugu wherever translated strings are available.
+
+If Hindi is selected:
+- UI and AI should be Hindi.
+
+If Marathi is selected:
+- UI and AI should be Marathi.
+
+If English is selected:
+- UI and AI should be English.
+
+DO NOT MIX ENGLISH INTO THE SELECTED LANGUAGE JUST BECAUSE IT IS EASIER.
+
+For example, do not produce:
+"మీ పంట Market లో మంచి Price పొందుతుంది."
+
+Instead, use natural Telugu:
+"మీ పంటకు మార్కెట్లో మంచి ధర లభించే అవకాశం ఉంది."
+
+Similarly, Hindi and Marathi responses must remain naturally written in those languages.
+
+IMPORTANT:
+- Do not translate the farmer's request into English and then return an English answer.
+- The AI should understand multilingual input internally but respond in the farmer's selected language.
+- Preserve the selected language throughout the conversation unless the farmer explicitly changes it.
+- Mixed-language input such as Hinglish, Telugu-English or Hindi-English should still be understood naturally, but the FINAL RESPONSE must follow the selected language.
+
+Create/use a centralized language configuration/translation system instead of hardcoding language checks throughout the UI.
+
+==================================================
+5. HISTORY SECTION
+==================================================
+
+Add a new "History" item in the main navigation/sidebar near:
+
+- Home
+- Voice / AI interaction
+- other existing navigation items
+
+Do NOT redesign the sidebar.
+
+History should allow the farmer to return to previous activity.
+
+Store/display relevant authenticated farmer history such as:
+
+- Previous AI questions
+- Voice conversations
+- Typed conversations
+- Crop quality checks
+- Crop grade/results
+- AI recommendations
+- Trader recommendations
+- Important decisions/actions
+
+Each history item should have:
+
+- Date/time
+- Activity type
+- Short summary
+- Result/status
+
+Clicking a history item should allow the farmer to open the relevant previous information.
+
+History must be associated with the authenticated farmer account.
+
+Do NOT show one farmer's history to another farmer.
+
+==================================================
+6. CROP QUALITY CHECK — IMPROVE FRAUD RESISTANCE
+==================================================
+
+Current quality checking only asks for pictures.
+
+This creates a potential fraud problem because someone could upload only a carefully selected good-looking image.
+
+Improve the workflow.
+
+Do NOT use only one image.
+
+Require MULTIPLE images for a quality assessment.
+
+Target:
+- Minimum: 4 photos
+- Recommended: 5 photos
+- Maximum: 10 photos
+
+Allow the farmer to capture/upload multiple images from different views.
+
+The UI should guide the farmer to capture different views, for example:
+
+1. Overall crop/produce view
+2. Close-up view
+3. Side/alternate angle
+4. Representative sample
+5. Optional additional close-up
+6-10. Additional supporting images if required
+
+Do not simply allow the exact same image to be uploaded repeatedly.
+
+Where technically possible:
+- Detect duplicate images
+- Compare image hashes/visual similarity
+- Warn if multiple uploaded images appear identical or nearly identical
+- Ask for another image
+
+For the SIH prototype, this can be implemented as a practical anti-fraud measure rather than claiming perfect fraud prevention.
+
+==================================================
+7. CROP QUALITY INPUT DATA
+==================================================
+
+Quality should NOT be judged from pictures alone.
+
+Collect additional structured information during the quality-check process.
+
+Ask for relevant information such as:
+
+- Crop/produce type
+- Variety if known
+- Harvest date
+- Approximate age since harvest
+- Storage conditions
+- Handling information
+- Location/district
+- Quantity
+- Any visible damage
+- Whether the produce was recently harvested
+- Other crop-specific information where appropriate
+
+Most importantly, capture:
+
+HARVEST DATE
+
+The AI should calculate the approximate number of days since harvest using the current date and harvest date.
+
+Example:
+
+Harvest date: 5 September
+Current date: 8 September
+Days since harvest: 3 days
+
+Use this information as one of the inputs to the quality assessment.
+
+Do NOT invent harvest dates.
+
+==================================================
+8. AI QUALITY ASSESSMENT
+==================================================
+
+The quality assessment should combine:
+
+A. Multiple images
+B. Crop/produce type
+C. Harvest date
+D. Days since harvest
+E. Storage conditions
+F. Handling information
+G. User-provided observations
+H. Other relevant structured information
+
+The AI should produce:
+
+- Grade A
+- Grade B
+- Grade C
+
+Also produce:
+
+- Quality score
+- Main observed issues
+- Confidence/assessment strength where appropriate
+- Recommended next action
+- Storage recommendation
+- Suggested urgency for selling if relevant
+
+Example output structure:
+
+GRADE A
+
+Quality Score: 91/100
+
+Observed:
+- Good appearance
+- Minimal visible damage
+- Fresh appearance
+- Suitable storage condition
+
+Recommendation:
+Suitable for premium buyers/traders.
+
+OR:
+
+GRADE B
+
+Quality Score: 72/100
+
+Observed:
+- Moderate surface defects
+- Some variation in quality
+- Freshness reduced compared with Grade A
+
+Recommendation:
+Sell to standard market/traders and avoid unnecessary storage.
+
+OR:
+
+GRADE C
+
+Quality Score: 48/100
+
+Observed:
+- Significant visible damage
+- Reduced freshness
+- Quality concerns
+
+Recommendation:
+Consider faster sale/local processing where appropriate.
+
+IMPORTANT:
+
+Do not present the AI assessment as a certified scientific laboratory test.
+
+Clearly communicate that the result is an AI-assisted visual/metadata assessment and that actual grading can vary based on professional inspection and market standards.
+
+==================================================
+9. MULTI-IMAGE AI ARCHITECTURE
+==================================================
+
+Structure the quality-check service so that multiple images are sent to the vision-capable AI service.
+
+Do NOT simply analyze only the first image and pretend all images were analyzed.
+
+If the current project does not yet have a vision API connected, create a clean service abstraction such as:
+
+qualityAssessmentService
+
+with a structure that can later connect to a real vision model/API.
+
+The architecture should support:
+
+- multiple image inputs
+- metadata
+- AI assessment
+- structured Grade A/B/C output
+
+Do not fabricate AI results and label them as real vision analysis.
+
+If a real vision API is already available in the project, use it.
+
+==================================================
+10. TRADER RECOMMENDATION BASED ON GRADE
+==================================================
+
+After the AI determines the crop grade, recommend the most appropriate trader/buyer options.
+
+Trader matching should consider:
+
+- Crop type
+- Grade A/B/C
+- Quantity
+- Location/district
+- Expected price/market conditions if available
+- Trader requirements
+- Distance/logistics where available
+- Buyer preference for quality grade
+
+Example:
+
+GRADE A
+→ Recommend premium/high-quality buyers first.
+
+GRADE B
+→ Recommend standard wholesale buyers.
+
+GRADE C
+→ Recommend buyers/markets that accept lower-grade produce, local processors, or faster-sale options where appropriate.
+
+Do NOT randomly recommend traders.
+
+Create a structured trader-matching service so the matching logic can later connect to real market/trader data.
+
+For the prototype, clearly distinguish demo trader data from real verified trader data.
+
+==================================================
+11. QUALITY RESULT SCREEN
+==================================================
+
+After the quality check, show a professional result screen containing:
+
+- Crop name
+- Number of images analyzed
+- Harvest date
+- Days since harvest
+- Grade A/B/C
+- Quality score
+- Key observations
+- Recommended action
+- Recommended trader/buyer category
+- Trader recommendations
+- Date/time of assessment
+
+Add a "Save to History" action.
+
+The result should automatically appear in the farmer's History.
+
+==================================================
+12. VIDEO — DO NOT IMPLEMENT NOW
+==================================================
+
+Do NOT implement video analysis in this version.
+
+We are intentionally keeping video/MP4 analysis aside because of cost and complexity.
+
+Keep the architecture extensible for future video support, but do NOT add video upload/analysis to the current prototype.
+
+Focus on high-quality multi-image assessment.
+
+==================================================
+13. VOICE ASSISTANT
+==================================================
+
+Do NOT break the existing working multilingual voice system.
+
+Preserve the current:
+
+- multilingual STT
+- real LLM
+- multilingual TTS
+- conversation context
+- language selection
+- Replit Secrets/API architecture
+
+The new "Tap to Type" feature must use the same backend AI system.
+
+Typed and voice conversations should be able to coexist in History.
+
+Do not replace the current working voice implementation with browser-only speech recognition.
+
+==================================================
+14. AUTHENTICATION + DATA ISOLATION
+==================================================
+
+Ensure all authenticated farmer information is logically associated with the current user.
+
+At minimum, separate:
+
+- profile
+- Aadhaar verification status
+- conversations
+- history
+- quality assessments
+- trader recommendations
+
+No farmer should see another farmer's information.
+
+For prototype authentication, local/demo authentication is acceptable, but structure the code so a real authentication/database service can replace it later.
+
+==================================================
+15. UI / UX REQUIREMENTS
+==================================================
+
+Keep the existing KisanLink design.
+
+The application should feel like:
+
+A professional Indian agricultural/public-service platform.
+
+NOT:
+- cartoonish
+- childish
+- flashy
+- game-like
+- excessive animations
+- excessive gradients
+- unnecessary redesigns
+
+Use clear farmer-friendly language and large touch targets.
+
+The most important Home actions after login should be obvious:
+
+🎤 TAP TO SPEAK
+
+⌨️ TAP TO TYPE
+
+==================================================
+16. FINAL TESTING
+==================================================
+
+Before finishing, test the following flows:
+
+FLOW 1:
+Register → Aadhaar field → language selection → account created → login → authenticated Home.
+
+FLOW 2:
+Login → Home → Tap to Speak → multilingual AI conversation.
+
+FLOW 3:
+Login → Home → Tap to Type → typed question → real AI response → follow-up question.
+
+FLOW 4:
+Select Telugu → entire supported UI appears in Telugu → AI responds in Telugu → TTS speaks Telugu.
+
+FLOW 5:
+Select Hindi → UI and AI remain Hindi.
+
+FLOW 6:
+Select Marathi → UI and AI remain Marathi.
+
+FLOW 7:
+Quality Check → upload/capture 4-10 different photos → enter crop + harvest date + metadata → AI assessment → Grade A/B/C → trader recommendation → save to History.
+
+FLOW 8:
+Open History → previous conversations and quality checks are visible → open an item → see its details.
+
+FLOW 9:
+Logout → authenticated farmer data disappears → no mock farmer dashboard information remains visible.
+
+FLOW 10:
+Create/login as another farmer → previous farmer's history/data must NOT appear.
+
+==================================================
+FINAL RESTRICTION
+==================================================
+
+DO NOT make unrelated changes.
+
+DO NOT redesign the existing KisanLink dashboard.
+
+DO NOT remove existing features.
+
+DO NOT implement video analysis.
+
+DO NOT use fake AI responses where a real AI service already exists.
+
+DO NOT claim real Aadhaar verification unless an authorized Aadhaar/e-KYC integration actually exists.
+
+Implement these enhancements cleanly within the existing project architecture and verify that the existing application still runs after the changes.
