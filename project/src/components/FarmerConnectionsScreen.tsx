@@ -1,0 +1,18 @@
+import { useEffect, useState } from 'react';
+import { CheckCircle2, Clock3, XCircle } from 'lucide-react';
+import { useApp } from '../AppContext';
+import { Card } from './ui/Card';
+import { loadMarket } from '../services/marketService';
+import type { BuyerRequest } from '../types';
+
+type LinkedRequest = BuyerRequest & { buyerName?: string; buyerMobile?: string; buyerEmail?: string; buyerDistrict?: string; buyerState?: string; variety?: string; message?: string; respondedAt?: string };
+
+export function FarmerConnectionsScreen() {
+  const { profile, t } = useApp();
+  const [requests, setRequests] = useState<LinkedRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { if (!profile) return; setLoading(true); loadMarket('farmer', profile.id).then(data => setRequests(data.requests as LinkedRequest[])).finally(() => setLoading(false)); }, [profile?.id]);
+  if (!profile) return null;
+  return <div className="px-4 pt-4 pb-2 sm:px-0"><div className="mb-4"><p className="text-xs font-bold uppercase tracking-wide text-brand-deep">KisanLink</p><h1 className="text-xl font-extrabold text-ink">Farmer–Buyer Connections</h1><p className="mt-1 text-sm text-ink-soft">When a buyer accepts your request, their business name and contact details are shown here.</p></div>{loading?<Card>Loading connections…</Card>:requests.length===0?<Card><p className="font-bold text-ink">No buyer connections yet.</p><p className="mt-1 text-sm text-ink-soft">Send a request from the buyer marketplace to create a connection.</p></Card>:<div className="space-y-3">{requests.map(r=><Card key={r.id}><div className="flex items-start justify-between gap-3"><div><p className="font-extrabold text-ink">{r.buyerName || 'Buyer'}</p><p className="mt-1 text-sm text-ink-soft">{r.cropName} · {r.requestedQuantity} qtl · Grade {r.grade}</p><p className="mt-1 text-xs text-ink-faint">{r.buyerDistrict || ''}{r.buyerState ? `, ${r.buyerState}` : ''}</p></div><Status status={r.status}/></div>{r.status==='accepted'&&<div className="mt-3 grid grid-cols-1 gap-2 rounded-xl bg-brand-soft p-3 text-sm sm:grid-cols-2"><div><p className="text-xs text-ink-soft">Buyer business</p><p className="font-bold text-ink">{r.buyerName}</p></div><div><p className="text-xs text-ink-soft">Mobile</p><p className="font-bold text-ink">{r.buyerMobile || 'Not available'}</p></div>{r.buyerEmail&&<div><p className="text-xs text-ink-soft">Email</p><p className="font-bold text-ink">{r.buyerEmail}</p></div>}<div><p className="text-xs text-ink-soft">Request status</p><p className="font-bold text-brand-deep">Accepted</p></div></div>}{r.message&&<p className="mt-3 rounded-xl bg-surface-alt p-3 text-sm text-ink-soft">{r.message}</p>}</Card>)}</div>}</div>;
+}
+function Status({status}:{status:BuyerRequest['status']}){if(status==='accepted')return <span className="flex items-center gap-1 rounded-full bg-brand-soft px-2 py-1 text-xs font-bold text-brand-deep"><CheckCircle2 size={14}/> Accepted</span>;if(status==='rejected')return <span className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-600"><XCircle size={14}/> Rejected</span>;return <span className="flex items-center gap-1 rounded-full bg-caution/10 px-2 py-1 text-xs font-bold text-caution"><Clock3 size={14}/> Pending</span>;}
