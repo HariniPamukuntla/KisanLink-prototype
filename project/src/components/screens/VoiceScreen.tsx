@@ -147,7 +147,7 @@ export function VoiceScreen() {
     setVoiceState('transcribing');
     setInterimText('');
     try {
-      const transcription = await recorder.stop();
+      const transcription = await recorder.stop(language);
       await handleRecognizedText(transcription.text, transcription.language);
     } catch (error) {
       const message = error instanceof SpeechServiceError

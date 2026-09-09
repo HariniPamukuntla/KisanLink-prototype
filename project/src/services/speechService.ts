@@ -134,12 +134,15 @@ export class SpeechRecorder {
     }
   }
 
-  stop() {
+  stop(languageHint: 'auto' | LanguageCode = 'auto') {
     if (!this.recorder || this.recorder.state === 'inactive' || !this.stopPromise) {
       return Promise.reject(new SpeechServiceError('I couldn’t understand the audio. Please try again.', 'recording-failed'));
     }
     this.recorder.stop();
-    return this.stopPromise;
+    return this.stopPromise.then(transcription => {
+      if (languageHint !== 'auto') transcription.language = languageHint;
+      return transcription;
+    });
   }
 
   cancel() {
