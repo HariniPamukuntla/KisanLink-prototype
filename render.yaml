@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: kisanlink
+    runtime: node
+    rootDir: project
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/kisanlink/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GEMINI_TTS_MODEL
+        value: gemini-2.5-flash-preview-tts
