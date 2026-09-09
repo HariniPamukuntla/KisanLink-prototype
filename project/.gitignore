@@ -11,6 +11,11 @@ dist
 dist-ssr
 *.local
 
+# Local SQLite runtime data
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+
 .vscode/*
 !.vscode/extensions.json
 .idea
