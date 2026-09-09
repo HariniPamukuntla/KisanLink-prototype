@@ -69,6 +69,47 @@ function localizedPriceAnswer(prices:any[], question:string, language:LanguageCo
   return `${label}: ${rows.map((p:any)=>`${name(p)} ₹${p.mandiPricePerKg}/kg mandi, ₹${p.retailMinPerKg}–₹${p.retailMaxPerKg}/kg retail`).join('; ')}.`;
 }
 
+function localizedCommonAnswer(kind: string, language: LanguageCode, values: { crop?: string; qty?: number; names?: string; count?: number; details?: string } = {}): string | null {
+  const { crop = '', qty = 0, names = '', count = 0 } = values;
+  if (language === 'hi') {
+    if (kind === 'quality') return crop ? `आपकी ${crop} की गुणवत्ता ताजगी, साफ-सफाई, एकसमान आकार, नुकसान, चोट, खराबी और सही रखरखाव के आधार पर जांची जानी चाहिए। KisanLink में 2-फोटो गुणवत्ता जांच का उपयोग करें।` : 'पहले अपनी फसल की जानकारी जोड़ें, फिर 2-फोटो गुणवत्ता जांच का उपयोग करें।';
+    if (kind === 'storage') return crop ? `${crop} को सूखी, छायादार और हवादार जगह पर रखें। खराब फसल को अलग रखें और ज्यादा गर्मी या नमी से बचाएं।` : 'ताजी फसल को ठंडी, सूखी और हवादार जगह पर रखें और खराब फसल को अलग करें।';
+    if (kind === 'sell') return crop ? `आप अपनी ${crop}${qty ? ` (${qty} क्विंटल)` : ''} को ${names || 'उपलब्ध खरीदारों'} को बेच सकते हैं। मार्केटप्लेस से कनेक्शन अनुरोध भेजें। अनुरोध स्वीकार होने के बाद ही संपर्क विवरण साझा किए जाते हैं।` : 'पहले अपनी फसल की जानकारी जोड़ें। उसके बाद KisanLink मिलान करने वाले खरीदार दिखाएगा।';
+    if (kind === 'demand') return `आपकी वर्तमान खरीदार मांग ${names || 'सेट नहीं है'}${qty ? `, आम तौर पर ${qty} क्विंटल` : ''} है। आप My demand में फसल, ग्रेड और मात्रा बदल सकते हैं।`;
+    if (kind === 'buyer') return count ? `डेटाबेस में ${count} पंजीकृत खरीदार हैं: ${names}।` : 'डेटाबेस में अभी कोई पंजीकृत खरीदार नहीं है।';
+    if (kind === 'farmer') return count ? `${count} किसान लिस्टिंग आपकी खरीदार मांग से मेल खाती हैं।` : 'आपकी वर्तमान खरीदार मांग से मेल खाने वाली किसान लिस्टिंग नहीं मिली।';
+    if (kind === 'request') return count ? `आपके पास ${count} कनेक्शन अनुरोध हैं।` : 'आपके पास अभी कोई कनेक्शन अनुरोध नहीं है।';
+    if (kind === 'crop') return crop ? `आपकी सेव की गई फसल ${crop}${qty ? ` है और मात्रा ${qty} क्विंटल है` : ''}। यह जानकारी आपके KisanLink डेटाबेस से ली गई है।` : 'अभी कोई फसल सेव नहीं है। होम पेज पर अपनी फसल की जानकारी जोड़ें।';
+    if (kind === 'quantity') return qty ? `आपकी सेव की गई मात्रा ${qty} क्विंटल${crop ? ` ${crop} की` : ''} है।` : 'अभी कोई मात्रा सेव नहीं है। होम पेज पर फसल और मात्रा जोड़ें।';
+    if (kind === 'hello') return 'नमस्ते! मैं आपकी फसल, खरीदार, मांग, कीमत, बिक्री, गुणवत्ता, अनुरोध और कनेक्शन के बारे में मदद कर सकता हूँ।';
+  }
+  if (language === 'te') {
+    if (kind === 'quality') return crop ? `మీ ${crop} నాణ్యతను తాజాదనం, శుభ్రత, సమాన పరిమాణం, నష్టం, గాయాలు, చెడిపోవడం మరియు సరైన నిర్వహణ ఆధారంగా చూడాలి. KisanLinkలో 2-ఫోటో నాణ్యత తనిఖీని ఉపయోగించండి.` : 'ముందుగా మీ పంట వివరాలను జోడించి, తర్వాత 2-ఫోటో నాణ్యత తనిఖీని ఉపయోగించండి.';
+    if (kind === 'storage') return crop ? `${crop}ను పొడి, నీడ ఉన్న, గాలి వచ్చే ప్రదేశంలో ఉంచండి. దెబ్బతిన్న పంటను వేరుగా ఉంచి, అధిక వేడి మరియు తేమను నివారించండి.` : 'తాజా పంటను చల్లని, పొడి, గాలి వచ్చే ప్రదేశంలో ఉంచండి మరియు దెబ్బతిన్న పంటను వేరుగా పెట్టండి.';
+    if (kind === 'sell') return crop ? `మీ ${crop}${qty ? ` (${qty} క్వింటాళ్లు)` : ''}ను ${names || 'అందుబాటులో ఉన్న కొనుగోలుదారులకు'} అమ్మవచ్చు. మార్కెట్‌ప్లేస్ నుంచి కనెక్షన్ అభ్యర్థన పంపండి. అభ్యర్థన అంగీకరించిన తర్వాతే సంప్రదింపు వివరాలు చూపబడతాయి.` : 'ముందుగా మీ పంట వివరాలను జోడించండి. తర్వాత KisanLink సరిపోలే కొనుగోలుదారులను చూపిస్తుంది.';
+    if (kind === 'demand') return `మీ ప్రస్తుత కొనుగోలుదారు డిమాండ్ ${names || 'సెట్ చేయలేదు'}${qty ? `, సాధారణంగా ${qty} క్వింటాళ్లు` : ''}. My demandలో పంట, గ్రేడ్ మరియు పరిమాణాన్ని మార్చవచ్చు.`;
+    if (kind === 'buyer') return count ? `డేటాబేస్‌లో ${count} నమోదైన కొనుగోలుదారులు ఉన్నారు: ${names}.` : 'డేటాబేస్‌లో ప్రస్తుతం నమోదైన కొనుగోలుదారులు లేరు.';
+    if (kind === 'farmer') return count ? `మీ కొనుగోలుదారు డిమాండ్‌కు సరిపోలే ${count} రైతు లిస్టింగ్‌లు కనిపించాయి.` : 'మీ ప్రస్తుత కొనుగోలుదారు డిమాండ్‌కు సరిపోలే రైతు లిస్టింగ్ కనిపించలేదు.';
+    if (kind === 'request') return count ? `మీకు ${count} కనెక్షన్ అభ్యర్థనలు ఉన్నాయి.` : 'మీకు ఇంకా కనెక్షన్ అభ్యర్థనలు లేవు.';
+    if (kind === 'crop') return crop ? `మీరు సేవ్ చేసిన పంట ${crop}${qty ? `, పరిమాణం ${qty} క్వింటాళ్లు` : ''}. ఈ సమాచారం మీ KisanLink డేటాబేస్ నుంచి వచ్చింది.` : 'ఇంకా పంట సేవ్ చేయలేదు. హోమ్ పేజీలో మీ పంట వివరాలను జోడించండి.';
+    if (kind === 'quantity') return qty ? `మీరు సేవ్ చేసిన పరిమాణం ${crop ? `${crop}కు ` : ''}${qty} క్వింటాళ్లు.` : 'ఇంకా పరిమాణం సేవ్ చేయలేదు. హోమ్ పేజీలో పంట మరియు పరిమాణాన్ని జోడించండి.';
+    if (kind === 'hello') return 'నమస్కారం! మీ పంట, కొనుగోలుదారులు, డిమాండ్, ధరలు, అమ్మకం, నాణ్యత, అభ్యర్థనలు మరియు కనెక్షన్ల గురించి నేను సహాయం చేయగలను.';
+  }
+  if (language === 'mr') {
+    if (kind === 'quality') return crop ? `तुमच्या ${crop} ची गुणवत्ता ताजेपणा, स्वच्छता, एकसमान आकार, नुकसान, डाग, खराबी आणि योग्य हाताळणी यावर तपासली पाहिजे. KisanLink मधील 2-फोटो गुणवत्ता तपासणी वापरा.` : 'आधी तुमच्या पिकाची माहिती जोडा आणि नंतर 2-फोटो गुणवत्ता तपासणी वापरा.';
+    if (kind === 'storage') return crop ? `${crop} कोरड्या, सावलीच्या आणि हवेशीर जागी ठेवा. खराब माल वेगळा ठेवा आणि जास्त उष्णता व ओलावा टाळा.` : 'ताजा माल थंड, कोरड्या आणि हवेशीर जागी ठेवा आणि खराब माल वेगळा करा.';
+    if (kind === 'sell') return crop ? `तुमचा ${crop}${qty ? ` (${qty} क्विंटल)` : ''} ${names || 'उपलब्ध खरेदीदारांना'} विकू शकता. मार्केटप्लेसमधून कनेक्शन विनंती पाठवा. विनंती स्वीकारल्यानंतरच संपर्क तपशील दिसतील.` : 'आधी तुमच्या पिकाची माहिती जोडा. त्यानंतर KisanLink जुळणारे खरेदीदार दाखवेल.';
+    if (kind === 'demand') return `तुमची सध्याची खरेदीदार मागणी ${names || 'सेट केलेली नाही'}${qty ? `, साधारण ${qty} क्विंटल` : ''} आहे. My demand मध्ये पीक, ग्रेड आणि प्रमाण बदलू शकता.`;
+    if (kind === 'buyer') return count ? `डेटाबेसमध्ये ${count} नोंदणीकृत खरेदीदार आहेत: ${names}.` : 'डेटाबेसमध्ये सध्या कोणतेही नोंदणीकृत खरेदीदार नाहीत.';
+    if (kind === 'farmer') return count ? `तुमच्या खरेदीदार मागणीशी जुळणाऱ्या ${count} शेतकरी लिस्टिंग सापडल्या.` : 'तुमच्या सध्याच्या खरेदीदार मागणीशी जुळणारी शेतकरी लिस्टिंग सापडली नाही.';
+    if (kind === 'request') return count ? `तुमच्याकडे ${count} कनेक्शन विनंत्या आहेत.` : 'तुमच्याकडे अजून कोणतीही कनेक्शन विनंती नाही.';
+    if (kind === 'crop') return crop ? `तुम्ही सेव केलेले पीक ${crop}${qty ? ` आणि प्रमाण ${qty} क्विंटल आहे` : ''}. ही माहिती तुमच्या KisanLink डेटाबेसमधून घेतली आहे.` : 'अजून कोणतेही पीक सेव केलेले नाही. होम पेजवर तुमची पिकाची माहिती जोडा.';
+    if (kind === 'quantity') return qty ? `तुम्ही सेव केलेले प्रमाण ${crop ? `${crop}चे ` : ''}${qty} क्विंटल आहे.` : 'अजून प्रमाण सेव केलेले नाही. होम पेजवर पीक आणि प्रमाण जोडा.';
+    if (kind === 'hello') return 'नमस्कार! मी तुमचे पीक, खरेदीदार, मागणी, किंमती, विक्री, गुणवत्ता, विनंत्या आणि कनेक्शन याबद्दल मदत करू शकतो.';
+  }
+  return null;
+}
+
 function localDatabaseAnswer(question: string, raw: string, language: LanguageCode, webRaw = '', marketRaw = ''): string {
   try {
     const data = JSON.parse(raw) as any;
@@ -104,25 +145,27 @@ function localDatabaseAnswer(question: string, raw: string, language: LanguageCo
       return accepted.map((r: any) => r.buyerName ? `${r.buyerName}: ${r.buyerMobile || 'mobile unavailable'}${r.buyerEmail ? `, ${r.buyerEmail}` : ''}` : `${r.farmerName || 'Farmer'}: ${r.farmerMobile || 'mobile unavailable'}${r.farmerEmail ? `, ${r.farmerEmail}` : ''}`).join(' ');
     }
     if (asksRequest) {
+      const localized = localizedCommonAnswer('request', language, { count: requests.length });
+      if (localized) return localized;
       if (!requests.length) return 'You have no connection requests yet. A buyer or farmer can send a request from the marketplace.';
       return requests.slice(0,8).map((r:any)=>`${r.buyerName||r.farmerName||'Connection'} — ${r.status} for ${r.cropName||crop||'produce'}${r.requestedQuantity?`, ${r.requestedQuantity} quintals`:''}.`).join(' ');
     }
-    if (asksQuality) return crop ? `For your ${crop}, quality should be judged by freshness, cleanliness, uniform size, damage, bruising, spoilage, and handling. Use the 2-photo quality check in KisanLink.` : 'Add your crop first, then use the 2-photo quality check.';
-    if (asksStorage) return crop ? `For ${crop}, keep the produce dry, shaded, ventilated, and separated from damaged produce. Avoid excess heat and moisture.` : 'For most fresh produce, use a cool, dry, ventilated storage area and remove damaged produce.';
+    if (asksQuality) return localizedCommonAnswer('quality', language, { crop }) || (crop ? `For your ${crop}, quality should be judged by freshness, cleanliness, uniform size, damage, bruising, spoilage, and handling. Use the 2-photo quality check in KisanLink.` : 'Add your crop first, then use the 2-photo quality check.');
+    if (asksStorage) return localizedCommonAnswer('storage', language, { crop }) || (crop ? `For ${crop}, keep the produce dry, shaded, ventilated, and separated from damaged produce. Avoid excess heat and moisture.` : 'For most fresh produce, use a cool, dry, ventilated storage area and remove damaged produce.');
     if (asksSell) {
-      if (!crop) return 'Add your crop details first. Then KisanLink can show matching buyers and you can send a connection request.';
+      if (!crop) return localizedCommonAnswer('sell', language, { crop }) || 'Add your crop details first. Then KisanLink can show matching buyers and you can send a connection request.';
       const matchingBuyers=buyers.filter((b:any)=>parseBuyerCrops(b).some((c:string)=>crop.toLowerCase().includes(c.toLowerCase())||c.toLowerCase().includes(crop.toLowerCase())));
-      return matchingBuyers.length?`You can offer your ${crop}${qty?` (${qty} quintals)`:''} to ${matchingBuyers.slice(0,4).map((b:any)=>b.name).join(', ')}. Send a request; contact details are shared after acceptance.`:`Your ${crop} is saved. Open the buyer marketplace to compare buyer demands.`;
+      return localizedCommonAnswer('sell', language, { crop, qty, names: matchingBuyers.slice(0,4).map((b:any)=>b.name).join(', ') }) || (matchingBuyers.length?`You can offer your ${crop}${qty?` (${qty} quintals)`:''} to ${matchingBuyers.slice(0,4).map((b:any)=>b.name).join(', ')}. Send a request; contact details are shared after acceptance.`:`Your ${crop} is saved. Open the buyer marketplace to compare buyer demands.`);
     }
-    if (asksDemand && buyer) return `Your current buyer demand is ${buyerCrops.length?buyerCrops.join(', '):'not set'}${buyer.typical_quantity?`, typically ${buyer.typical_quantity} quintals`:''}. You can change crops, grades, and quantity in My demand.`;
-    if (asksBuyer && farmer) return buyers.length?`There are ${buyers.length} registered buyers: ${buyers.slice(0,4).map((b:any)=>b.name).join(', ')}.`:'There are no registered buyers in the database.';
+    if (asksDemand && buyer) return localizedCommonAnswer('demand', language, { names: buyerCrops.length ? buyerCrops.join(', ') : '', qty: Number(buyer.typical_quantity || 0) }) || `Your current buyer demand is ${buyerCrops.length?buyerCrops.join(', '):'not set'}${buyer.typical_quantity?`, typically ${buyer.typical_quantity} quintals`:''}. You can change crops, grades, and quantity in My demand.`;
+    if (asksBuyer && farmer) return localizedCommonAnswer('buyer', language, { count: buyers.length, names: buyers.slice(0,4).map((b:any)=>b.name).join(', ') }) || (buyers.length?`There are ${buyers.length} registered buyers: ${buyers.slice(0,4).map((b:any)=>b.name).join(', ')}.`:'There are no registered buyers in the database.');
     if (asksFarmer && buyer) {
       const wanted=buyerCrops.map(c=>c.toLowerCase()); const matches=listings.filter((l:any)=>wanted.some(word=>String(l.crop_name||l.cropName||'').toLowerCase().includes(word)));
-      return matches.length?`I found ${matches.length} farmer listing${matches.length===1?'':'s'} matching your demand. ${matches.slice(0,4).map((m:any)=>`${m.crop_name||m.cropName} from ${m.farmer_name||m.farmerName}, ${m.quantity_quintals||m.quantityQuintals||0} quintals`).join('; ')}.`:'I could not find a current farmer listing matching your saved buyer demand.';
+      return localizedCommonAnswer('farmer', language, { count: matches.length }) || (matches.length?`I found ${matches.length} farmer listing${matches.length===1?'':'s'} matching your demand. ${matches.slice(0,4).map((m:any)=>`${m.crop_name||m.cropName} from ${m.farmer_name||m.farmerName}, ${m.quantity_quintals||m.quantityQuintals||0} quintals`).join('; ')}.`:'I could not find a current farmer listing matching your saved buyer demand.');
     }
-    if (asksCrop) return crop?`Your saved crop is ${crop}${qty?` with ${qty} quintals`:''}. This comes from your live KisanLink database.`:'No crop has been saved yet. Add your crop details on the home page first.';
-    if (asksQuantity) return qty?`Your saved listing quantity is ${qty} quintals${crop?` of ${crop}`:''}.`:'No listing quantity is saved yet. Add your crop and quantity on the home page.';
-    if (has('hello','hi ','hey','namaste','నమస్తే','नमस्ते')) return 'Hello! I can answer questions about your crop, buyers, demand, selling options, quality, requests, contacts, and current market information.';
+    if (asksCrop) return localizedCommonAnswer('crop', language, { crop, qty }) || (crop?`Your saved crop is ${crop}${qty?` with ${qty} quintals`:''}. This comes from your live KisanLink database.`:'No crop has been saved yet. Add your crop details on the home page first.');
+    if (asksQuantity) return localizedCommonAnswer('quantity', language, { crop, qty }) || (qty?`Your saved listing quantity is ${qty} quintals${crop?` of ${crop}`:''}.`:'No listing quantity is saved yet. Add your crop and quantity on the home page.');
+    if (has('hello','hi ','hey','namaste','నమస్తే','नमस्ते')) return localizedCommonAnswer('hello', language) || 'Hello! I can answer questions about your crop, buyers, demand, selling options, quality, requests, contacts, and current market information.';
     if (language==='hi') return 'मैं आपके सवाल के हिसाब से लाइव KisanLink डेटा देख सकता हूँ। फसल, खरीदार, मांग, कीमत, बिक्री, गुणवत्ता या कनेक्शन के बारे में पूछें।';
     if (language==='te') return 'మీ ప్రశ్నకు అనుగుణంగా లైవ్ KisanLink డేటాను చూస్తాను. పంట, కొనుగోలుదారు, డిమాండ్, ధర, అమ్మకం, నాణ్యత లేదా కనెక్షన్ గురించి అడగండి.';
     if (language==='mr') return 'तुमच्या प्रश्नानुसार मी लाइव्ह KisanLink डेटा तपासतो. पीक, खरेदीदार, मागणी, किंमत, विक्री, गुणवत्ता किंवा कनेक्शनबद्दल विचारा.';
