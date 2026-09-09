@@ -33,7 +33,7 @@ export function VoiceScreen() {
     finally { setState('idle'); }
   }, []);
 
-  const handleRecognizedText = useCallback(async (recognized: string, detected?: LanguageCode) => {
+  const handleRecognizedText = useCallback(async (recognized: string, detected?: LanguageCode, shouldSpeak = false) => {
     const clean = recognized.trim();
     if (!clean) { setState('idle'); return; }
     setState('thinking');
@@ -48,7 +48,8 @@ export function VoiceScreen() {
       const assistant: VoiceExchange = { id: `a-${Date.now()}`, role: 'assistant', text: answer, timestamp: Date.now(), language };
       setExchanges(prev => [...prev, assistant]);
       addHistory({ type: 'conversation', title: 'KisanVoice', summary: clean, result: answer, details: [`Language: ${LANGUAGES.find(x => x.code === language)?.name || language}`] });
-      void speakResponse(answer, language);
+      if (shouldSpeak) void speakResponse(answer, language);
+      else setState('idle');
     } catch (e) {
       setError(e instanceof AIServiceError ? e.message : 'KisanVoice could not generate an answer.');
       setState('idle');
@@ -67,7 +68,7 @@ export function VoiceScreen() {
       await recorder.start(language, result => {
         setState('transcribing');
         setText(`Heard: ${result.text}`);
-        void handleRecognizedText(result.text, result.language);
+        void handleRecognizedText(result.text, result.language, true);
       });
     } catch (e) {
       setState('idle');
@@ -90,7 +91,7 @@ export function VoiceScreen() {
     if (!clean || state !== 'idle') return;
     setVoiceInputMode('type');
     setText('');
-    void handleRecognizedText(clean);
+    void handleRecognizedText(clean, undefined, false);
   }, [handleRecognizedText, setVoiceInputMode, state, text]);
 
   useEffect(() => {
@@ -115,14 +116,14 @@ export function VoiceScreen() {
       {error && <p className="mt-3 flex items-center gap-1 text-center text-xs text-warning"><AlertCircle size={14} />{error}</p>}
     </Card>
 
-    {exchanges.length > 0 && <div className="mb-4 space-y-3">{exchanges.map(ex => <div key={ex.id} className={`flex ${ex.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${ex.role === 'user' ? 'bg-market-soft text-market-deep' : 'bg-brand-soft text-brand-deep'}`}><div>{ex.text}</div>{ex.role === 'assistant' && <button onClick={() => void speakResponse(ex.text, ex.language || responseLanguage)} className="mt-2 rounded-full p-1"><Volume2 size={16} /></button>}</div></div>)}</div>}
+    {exchanges.length > 0 && <div className="mb-4 space-y-3">{exchanges.map(ex => <div key={ex.id} className={`flex ${ex.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${ex.role === 'user' ? 'bg-market-soft text-market-deep' : 'bg-brand-soft text-brand-deep'}`}><div>{ex.text}</div>{ex.role === 'assistant' && voiceInputMode === 'voice' && <button onClick={() => void speakResponse(ex.text, ex.language || responseLanguage)} className="mt-2 rounded-full p-1" aria-label="Read answer aloud"><Volume2 size={16} /></button>}</div></div>)}</div>}
 
     <div className="mb-4 flex gap-2">
       <input ref={inputRef} value={text} onChange={e => { setVoiceInputMode('type'); setText(e.target.value); }} onKeyDown={e => { if (e.key === 'Enter') submitTyped(); }} placeholder="Type your question — e.g. Which buyers want my crop?" className="flex-1 rounded-2xl border border-line bg-surface-card px-4 py-3 text-sm outline-none" />
       <Button onClick={submitTyped} disabled={!text.trim() || state !== 'idle'}><Send size={16} /></Button>
     </div>
 
-    {exchanges.length === 0 && <div><p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-soft">Try asking</p><div className="flex flex-wrap gap-2">{suggestions.slice(0, 6).map((s, i) => <button key={i} onClick={() => void handleRecognizedText(s)} className="rounded-full border border-line bg-surface-card px-3 py-2 text-sm">{s}</button>)}</div></div>}
+    {exchanges.length === 0 && <div><p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-soft">Try asking</p><div className="flex flex-wrap gap-2">{suggestions.slice(0, 6).map((s, i) => <button key={i} onClick={() => void handleRecognizedText(s, undefined, false)} className="rounded-full border border-line bg-surface-card px-3 py-2 text-sm">{s}</button>)}</div></div>}
 
     {langOpen && <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"><div className="absolute inset-0 bg-ink/40" onClick={() => setLangOpen(false)} /><div className="relative w-full max-w-md rounded-t-3xl bg-surface-card p-5 sm:rounded-3xl"><h3 className="text-lg font-bold">{t('selectLanguage')}</h3><div className="mt-3 grid grid-cols-2 gap-2">{LANGUAGES.map(l => <button key={l.code} onClick={() => { setLanguage(l.code as LanguageCode); setLangOpen(false); }} className="rounded-xl border border-line p-3 text-left">{l.nativeName} · {l.name}</button>)}</div></div></div>}
   </div>;
