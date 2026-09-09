@@ -9,54 +9,21 @@ import { useMemo, useState } from 'react';
 export function HomeScreen() {
   const { t, setActiveTab, setVoiceInputMode, buyers, setView, view, setAuthenticated, profile } = useApp();
   const [showCropQuality, setShowCropQuality] = useState(false);
-  if (!profile) return null;
-
-  // First-time farmer flow: collect the crop before showing marketplace recommendations.
-  if (!profile.produce) {
-    return <CropQualityScreen onClose={() => undefined} />;
-  }
-
   const matchingBuyers = useMemo(() => {
-    const crop = profile.produce?.cropName.trim().toLowerCase() || '';
-    const grade = profile.produce?.grade;
-    return buyers
-      .filter(b => {
-        const buyerCrop = (b.crop || '').toLowerCase();
-        return !crop || buyerCrop === crop || buyerCrop.includes(crop) || crop.includes(buyerCrop);
-      })
-      .sort((a, b) => Number(b.grade === grade) - Number(a.grade === grade) || b.trust.trustScore - a.trust.trustScore)
-      .slice(0, 3);
-  }, [buyers, profile.produce]);
-  const bestBuyer = matchingBuyers[0];
-
-  return (
-    <div className="px-4 pt-4 pb-2 sm:px-0 sm:pt-2 sm:pb-4">
-      <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-2"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-deep"><Sprout size={22} className="text-white" /></div><div><h1 className="text-lg font-extrabold leading-none text-brand-deep">KisanLink</h1><p className="mt-0.5 text-[10px] text-ink-soft">{t('tagline')}</p></div></div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setView(view === 'farmer' ? 'admin' : 'farmer')} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-card text-ink-soft"><ShieldCheck size={18} /></button>
-          <button onClick={() => setActiveTab('buyers')} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-card text-ink-soft"><Bell size={18} /></button>
-          <button onClick={() => setAuthenticated(false)} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-card text-ink-soft"><LogOut size={17} /></button>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand-deep">{profile.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()}</div>
-        </div>
-      </div>
-
-      <div className="mb-4"><h2 className="text-2xl font-extrabold text-ink">{profile.name.split(/\s+/)[0]}, your market is ready</h2><p className="mt-0.5 text-sm text-ink-soft">Recommendations below are based on your saved crop and live SQLite buyer records.</p></div>
-
-      <Card className="mb-4 border-brand-mid/30">
-        <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Your crop</p><h3 className="mt-1 text-xl font-extrabold text-ink">{profile.produce.cropName}</h3><p className="mt-1 text-sm text-ink-soft">{profile.produce.quantityQuintals} quintals · Grade {profile.produce.grade}{profile.produce.variety ? ` · ${profile.produce.variety}` : ''}</p></div><Chip tone="brand">Saved to SQLite</Chip></div>
-        <div className="mt-4 flex gap-2"><Button size="sm" variant="outline" onClick={() => setShowCropQuality(true)}>Update crop details</Button><Button size="sm" onClick={() => setActiveTab('buyers')}>View buyers <ChevronRight size={15}/></Button></div>
-      </Card>
-
-      <div className="mb-4"><h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-ink-soft"><Send size={15} className="text-brand-deep"/> Buyer suggestions</h3>
-        {bestBuyer ? <Card className="border-brand-mid/30"><div className="flex items-start justify-between gap-3"><div><p className="text-base font-extrabold text-ink">{bestBuyer.name}</p><p className="mt-1 text-sm text-ink-soft">{bestBuyer.type} · {bestBuyer.location}</p></div><Chip tone="brand">Best match</Chip></div><div className="mt-4 grid grid-cols-3 gap-2 text-xs"><div className="rounded-xl bg-surface-alt p-3"><p className="text-ink-faint">Trust</p><p className="mt-1 font-bold text-ink">{bestBuyer.trust.trustScore}/100</p></div><div className="rounded-xl bg-surface-alt p-3"><p className="text-ink-faint">Demand</p><p className="mt-1 font-bold text-ink">{bestBuyer.demandQuintals} qtl</p></div><div className="rounded-xl bg-surface-alt p-3"><p className="text-ink-faint">Grade</p><p className="mt-1 font-bold text-ink">{bestBuyer.grade}</p></div></div><Button fullWidth className="mt-4" onClick={() => setActiveTab('buyers')}>Connect with this buyer <ChevronRight size={16}/></Button></Card> : <Card><p className="font-bold text-ink">No matching buyer yet</p><p className="mt-1 text-sm text-ink-soft">Your crop is saved. A buyer will appear here when a registered buyer has this crop in their demand.</p></Card>}
-        {matchingBuyers.length > 1 && <div className="mt-2 grid gap-2">{matchingBuyers.slice(1).map(b => <Card key={b.id} className="py-3"><div className="flex items-center justify-between"><div><p className="font-bold text-ink">{b.name}</p><p className="text-xs text-ink-soft">{b.type} · {b.location}</p></div><span className="text-xs font-bold text-ink-soft">Trust {b.trust.trustScore}</span></div></Card>)}</div>}
-      </div>
-
-      <Card className="mb-4 border-0 bg-gradient-to-br from-brand-deep to-brand-mid overflow-hidden"><div className="mb-3 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15"><Mic size={18} className="text-white" /></div><span className="text-base font-bold text-white">KisanVoice</span></div><p className="mb-4 text-sm text-white/90">Ask about your crop, buyers, requests and selling options using your live app data.</p><div className="grid grid-cols-2 gap-2"><button onClick={() => { setVoiceInputMode('voice'); setActiveTab('voice'); }} className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/15 py-3.5"><Mic size={22} className="text-white"/><span className="text-sm font-semibold text-white">{t('tapToSpeak')}</span></button><button onClick={() => { setVoiceInputMode('type'); setActiveTab('voice'); }} className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/10 py-3.5"><Keyboard size={22} className="text-white"/><span className="text-sm font-semibold text-white">{t('tapToType')}</span></button></div></Card>
-
-      <div className="grid grid-cols-2 gap-3"><button onClick={() => setActiveTab('advisor')} className="flex flex-col items-center gap-2 rounded-3xl border border-line bg-surface-card p-4"><Calculator size={22} className="text-brand-deep"/><span className="text-sm font-semibold text-ink">{t('netReturnAdvisor')}</span></button><button onClick={() => setActiveTab('buyers')} className="flex flex-col items-center gap-2 rounded-3xl border border-line bg-surface-card p-4"><Send size={22} className="text-market-deep"/><span className="text-sm font-semibold text-ink">Buyer connections</span></button></div>
-      {showCropQuality && <CropQualityScreen onClose={() => setShowCropQuality(false)} />}
-    </div>
-  );
+    const crop = profile?.produce?.cropName.trim().toLowerCase() || '';
+    const grade = profile?.produce?.grade;
+    if (!crop) return [];
+    return buyers.filter(b => { const buyerCrop=(b.crop||'').toLowerCase(); return buyerCrop===crop||buyerCrop.includes(crop)||crop.includes(buyerCrop); }).sort((a,b)=>Number(b.grade===grade)-Number(a.grade===grade)||b.trust.trustScore-a.trust.trustScore).slice(0,3);
+  }, [buyers, profile?.produce]);
+  if (!profile) return null;
+  if (!profile.produce) return <CropQualityScreen onClose={() => undefined} />;
+  const bestBuyer=matchingBuyers[0];
+  return <div className="px-4 pt-4 pb-2 sm:px-0 sm:pt-2 sm:pb-4">
+    <div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-2"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-deep"><Sprout size={22} className="text-white"/></div><div><h1 className="text-lg font-extrabold leading-none text-brand-deep">KisanLink</h1><p className="mt-0.5 text-[10px] text-ink-soft">{t('tagline')}</p></div></div><div className="flex items-center gap-2"><button onClick={()=>setView(view==='farmer'?'admin':'farmer')} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-card text-ink-soft"><ShieldCheck size={18}/></button><button onClick={()=>setActiveTab('buyers')} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-card text-ink-soft"><Bell size={18}/></button><button onClick={()=>setAuthenticated(false)} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-card text-ink-soft"><LogOut size={17}/></button><div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand-deep">{profile.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()}</div></div></div>
+    <div className="mb-4"><h2 className="text-2xl font-extrabold text-ink">{profile.name.split(/\s+/)[0]}, your market is ready</h2><p className="mt-0.5 text-sm text-ink-soft">These suggestions are generated from your crop and registered SQLite buyer records.</p></div>
+    <Card className="mb-4 border-brand-mid/30"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Your crop</p><h3 className="mt-1 text-xl font-extrabold text-ink">{profile.produce.cropName}</h3><p className="mt-1 text-sm text-ink-soft">{profile.produce.quantityQuintals} quintals · Grade {profile.produce.grade}{profile.produce.variety?` · ${profile.produce.variety}`:''}</p></div><Chip tone="brand">Saved to SQLite</Chip></div><div className="mt-4 flex gap-2"><Button size="sm" variant="outline" onClick={()=>setShowCropQuality(true)}>Update crop details</Button><Button size="sm" onClick={()=>setActiveTab('buyers')}>View buyers <ChevronRight size={15}/></Button></div></Card>
+    <div className="mb-4"><h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-ink-soft"><Send size={15} className="text-brand-deep"/> Buyer suggestions</h3>{bestBuyer?<Card className="border-brand-mid/30"><div className="flex items-start justify-between gap-3"><div><p className="text-base font-extrabold text-ink">{bestBuyer.name}</p><p className="mt-1 text-sm text-ink-soft">{bestBuyer.type} · {bestBuyer.location}</p></div><Chip tone="brand">Best match</Chip></div><div className="mt-4 grid grid-cols-3 gap-2 text-xs"><div className="rounded-xl bg-surface-alt p-3"><p className="text-ink-faint">Trust</p><p className="mt-1 font-bold text-ink">{bestBuyer.trust.trustScore}/100</p></div><div className="rounded-xl bg-surface-alt p-3"><p className="text-ink-faint">Demand</p><p className="mt-1 font-bold text-ink">{bestBuyer.demandQuintals} qtl</p></div><div className="rounded-xl bg-surface-alt p-3"><p className="text-ink-faint">Grade</p><p className="mt-1 font-bold text-ink">{bestBuyer.grade}</p></div></div><Button fullWidth className="mt-4" onClick={()=>setActiveTab('buyers')}>Connect with this buyer <ChevronRight size={16}/></Button></Card>:<Card><p className="font-bold text-ink">No matching buyer yet</p><p className="mt-1 text-sm text-ink-soft">Your crop is saved. Registered buyers will appear here when their demand includes this crop.</p></Card>}{matchingBuyers.slice(1).map(b=><Card key={b.id} className="mt-2 py-3"><div className="flex items-center justify-between"><div><p className="font-bold text-ink">{b.name}</p><p className="text-xs text-ink-soft">{b.type} · {b.location}</p></div><span className="text-xs font-bold text-ink-soft">Trust {b.trust.trustScore}</span></div></Card>)}</div>
+    <Card className="mb-4 overflow-hidden border-0 bg-gradient-to-br from-brand-deep to-brand-mid"><div className="mb-3 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15"><Mic size={18} className="text-white"/></div><span className="text-base font-bold text-white">KisanVoice</span></div><p className="mb-4 text-sm text-white/90">Ask about your crop, buyers, requests and selling options using live database data.</p><div className="grid grid-cols-2 gap-2"><button onClick={()=>{setVoiceInputMode('voice');setActiveTab('voice')}} className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/15 py-3.5"><Mic size={22} className="text-white"/><span className="text-sm font-semibold text-white">{t('tapToSpeak')}</span></button><button onClick={()=>{setVoiceInputMode('type');setActiveTab('voice')}} className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/10 py-3.5"><Keyboard size={22} className="text-white"/><span className="text-sm font-semibold text-white">{t('tapToType')}</span></button></div></Card>
+    <div className="grid grid-cols-2 gap-3"><button onClick={()=>setActiveTab('advisor')} className="flex flex-col items-center gap-2 rounded-3xl border border-line bg-surface-card p-4"><Calculator size={22} className="text-brand-deep"/><span className="text-sm font-semibold text-ink">{t('netReturnAdvisor')}</span></button><button onClick={()=>setActiveTab('buyers')} className="flex flex-col items-center gap-2 rounded-3xl border border-line bg-surface-card p-4"><Send size={22} className="text-market-deep"/><span className="text-sm font-semibold text-ink">Buyer connections</span></button></div>
+    {showCropQuality&&<CropQualityScreen onClose={()=>setShowCropQuality(false)}/>}</div>;
 }
